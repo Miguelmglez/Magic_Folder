@@ -1,17 +1,16 @@
 package com.mmg.magicfolder.code.core.data.remote.mapper
 
 
-import com.google.firebase.crashlytics.buildtools.reloc.com.google.common.reflect.TypeToken
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.mmg.magicfolder.code.core.data.local.entity.CardEntity
 import com.mmg.magicfolder.code.core.domain.model.Card
 
 private val gson = Gson()
-private val listType = object : TypeToken>() {}.type
+private val listType = object : TypeToken<List<String>>() {}.type
 
-internal fun String.toStringList(): List = gson.fromJson(this, listType) ?: emptyList()
-internal fun List.toJson(): String = gson.toJson(this)
+internal fun String.toStringList(): List<String> = gson.fromJson(this, listType) ?: emptyList()
+internal fun List<String>.toJson(): String = gson.toJson(this)
 
 fun CardEntity.toDomain(): Card = Card(
     scryfallId        = scryfallId,
@@ -93,5 +92,5 @@ fun Card.toEntity(): CardEntity = CardEntity(
     cachedAt          = cachedAt,
 )
 
-fun List.toDomain(): List       = map { it.toDomain() }
-fun List.toEntity():       List  = map { it.toEntity() }
+fun List<CardEntity>.toDomain(): List<Card>       = map { it.toDomain() }
+fun List<Card>.toEntity():       List<CardEntity>  = map { it.toEntity() }

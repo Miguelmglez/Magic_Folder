@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.tuapp.mtgcollection"
+    namespace = "com.mmg.magicfolder"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.tuapp.mtgcollection"
+        applicationId = "com.mmg.magicfolder"
         minSdk = 29
         targetSdk = 35
         versionCode = 1
@@ -65,4 +65,7 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
     testImplementation(libs.coroutines.test)
+
+    // Gson — needed directly by RoomConverters and CardEntityMapper
+    implementation("com.google.code.gson:gson:2.10.1")
 }

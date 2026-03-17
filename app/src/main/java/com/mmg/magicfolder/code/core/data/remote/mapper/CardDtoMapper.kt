@@ -51,5 +51,5 @@ fun CardDto.toDomain(): Card {
 }
 
 fun CardDto.toEntity(): CardEntity         = toDomain().toEntity()
-fun List.toDomain(): List   = map { it.toDomain() }
-fun List.toEntity(): List = map { it.toEntity() }
+fun List<CardDto>.toDomain(): List<Card>   = map { it.toDomain() }
+fun List<CardDto>.toEntity(): List<CardEntity> = map { it.toEntity() }

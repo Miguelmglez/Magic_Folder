@@ -7,12 +7,12 @@ import com.google.gson.reflect.TypeToken
 
 class RoomConverters {
     private val gson = Gson()
-    private val listType = object : TypeToken>() {}.type
+    private val listType = object : TypeToken<List<String>>() {}.type
 
     @TypeConverter
-    fun fromStringList(list: List): String = gson.toJson(list)
+    fun fromStringList(list: List<String>): String = gson.toJson(list)
 
     @TypeConverter
-    fun toStringList(json: String): List =
+    fun toStringList(json: String): List<String> =
         gson.fromJson(json, listType) ?: emptyList()
 }

@@ -1,9 +1,9 @@
 package com.mmg.magicfolder.code.core.data.local
 
 import androidx.room.*
-import com.mmg.magicfolder.core.data.local.converter.RoomConverters
-import com.mmg.magicfolder.core.data.local.dao.*
-import com.mmg.magicfolder.core.data.local.entity.*
+import com.mmg.magicfolder.code.core.data.local.converter.RoomConverters
+import com.mmg.magicfolder.code.core.data.local.dao.*
+import com.mmg.magicfolder.code.core.data.local.entity.*
 
 @Database(
     entities = [

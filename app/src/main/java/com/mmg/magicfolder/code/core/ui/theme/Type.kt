@@ -1,4 +1,4 @@
-package com.mmg.magicfolder.core.ui.theme
+package com.mmg.magicfolder.code.core.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

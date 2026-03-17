@@ -44,7 +44,7 @@ interface UserCardDao {
 
     @Transaction
     @Query("SELECT * FROM user_cards ORDER BY added_at DESC")
-    fun observeCollection(): Flow>
+    fun observeCollection(): Flow<List<UserCardWithCard>>
 
     @Transaction
     @Query("""
@@ -53,7 +53,7 @@ interface UserCardDao {
         WHERE c.color_identity LIKE '%' || :color || '%'
         ORDER BY c.name ASC
     """)
-    fun observeByColor(color: String): Flow>
+    fun observeByColor(color: String): Flow<List<UserCardWithCard>>
 
     @Transaction
     @Query("""
@@ -61,7 +61,7 @@ interface UserCardDao {
         INNER JOIN cards c ON uc.scryfall_id = c.scryfall_id
         WHERE c.rarity = :rarity ORDER BY c.name ASC
     """)
-    fun observeByRarity(rarity: String): Flow>
+    fun observeByRarity(rarity: String): Flow<List<UserCardWithCard>>
 
     @Transaction
     @Query("""
@@ -69,16 +69,16 @@ interface UserCardDao {
         INNER JOIN cards c ON uc.scryfall_id = c.scryfall_id
         WHERE c.name LIKE '%' || :query || '%' ORDER BY c.name ASC
     """)
-    fun searchInCollection(query: String): Flow>
+    fun searchInCollection(query: String): Flow<List<UserCardWithCard>>
 
     @Query("SELECT * FROM user_cards WHERE id = :id")
     suspend fun getById(id: Long): UserCardEntity?
 
     @Query("SELECT DISTINCT scryfall_id FROM user_cards")
-    suspend fun getAllScryfallIds(): List
+    suspend fun getAllScryfallIds(): List<String>
 
     @Query("SELECT COUNT(*) FROM user_cards")
-    fun observeCount(): Flow
+    fun observeCount(): Flow<Int>
 }
 
 /** Room relation: user card entry joined with its full card metadata. */

@@ -16,10 +16,10 @@ import javax.inject.Singleton
 @Singleton
 class DeckRepositoryImpl @Inject constructor(private val deckDao: DeckDao) : DeckRepository {
 
-    override fun observeAllDecks(): Flow> =
-    deckDao.observeAllDecks().map { it.map { d -> d.toDomain() } }
+    override fun observeAllDecks(): Flow<List<Deck>> =
+        deckDao.observeAllDecks().map { it.map { d -> d.toDomain() } }
 
-    override fun observeDeckWithCards(deckId: Long): Flow =
+    override fun observeDeckWithCards(deckId: Long): Flow<DeckWithCards?> =
         deckDao.observeDeckWithCards(deckId).map { it?.toDomain() }
 
     override suspend fun createDeck(deck: Deck): Long  = deckDao.insertDeck(deck.toEntity())

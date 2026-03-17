@@ -2,6 +2,7 @@ package com.mmg.magicfolder.code.core.data.local.dao
 
 
 import androidx.room.*
+import com.mmg.magicfolder.code.core.data.local.entity.projection.*
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -11,7 +12,7 @@ interface StatsDao {
         SELECT SUM(uc.quantity) AS totalCards, COUNT(DISTINCT uc.scryfall_id) AS uniqueCards
         FROM user_cards uc
     """)
-    fun observeTotals(): Flow
+    fun observeTotals(): Flow<TotalsProjection>
 
     @Query("""
         SELECT COALESCE(SUM(uc.quantity * CASE
@@ -19,7 +20,7 @@ interface StatsDao {
             ELSE COALESCE(c.price_usd, 0) END), 0)
         FROM user_cards uc INNER JOIN cards c ON uc.scryfall_id = c.scryfall_id
     """)
-    fun observeTotalValueUsd(): Flow
+    fun observeTotalValueUsd(): Flow<Double>
 
     @Query("""
         SELECT COALESCE(SUM(uc.quantity * CASE
@@ -27,7 +28,7 @@ interface StatsDao {
             ELSE COALESCE(c.price_eur, 0) END), 0)
         FROM user_cards uc INNER JOIN cards c ON uc.scryfall_id = c.scryfall_id
     """)
-    fun observeTotalValueEur(): Flow
+    fun observeTotalValueEur(): Flow<Double>
 
     @Query("""
         SELECT c.scryfall_id AS scryfallId, c.name AS name,
@@ -37,28 +38,28 @@ interface StatsDao {
         FROM user_cards uc INNER JOIN cards c ON uc.scryfall_id = c.scryfall_id
         ORDER BY priceUsd DESC LIMIT :limit
     """)
-    fun observeMostValuableCards(limit: Int = 5): Flow>
+    fun observeMostValuableCards(limit: Int = 5): Flow<List<CardValueProjection>>
 
     @Query("""
         SELECT c.color_identity AS colorIdentity, SUM(uc.quantity) AS count
         FROM user_cards uc INNER JOIN cards c ON uc.scryfall_id = c.scryfall_id
         GROUP BY c.color_identity
     """)
-    fun observeCountByColorIdentity(): Flow>
+    fun observeCountByColorIdentity(): Flow<List<ColorCountProjection>>
 
     @Query("""
         SELECT c.rarity AS rarity, SUM(uc.quantity) AS count
         FROM user_cards uc INNER JOIN cards c ON uc.scryfall_id = c.scryfall_id
         GROUP BY c.rarity
     """)
-    fun observeCountByRarity(): Flow>
+    fun observeCountByRarity(): Flow<List<RarityCountProjection>>
 
     @Query("""
         SELECT c.type_line AS typeLine, SUM(uc.quantity) AS count
         FROM user_cards uc INNER JOIN cards c ON uc.scryfall_id = c.scryfall_id
         GROUP BY c.type_line
     """)
-    fun observeCountByTypeLine(): Flow>
+    fun observeCountByTypeLine(): Flow<List<TypeCountProjection>>
 
     @Query("""
         SELECT MIN(CAST(c.cmc AS INTEGER), 7) AS cmc, SUM(uc.quantity) AS count
@@ -66,12 +67,12 @@ interface StatsDao {
         WHERE c.type_line NOT LIKE '%Land%'
         GROUP BY MIN(CAST(c.cmc AS INTEGER), 7) ORDER BY cmc ASC
     """)
-    fun observeManaCurve(): Flow>
+    fun observeManaCurve(): Flow<List<CmcCountProjection>>
 
     @Query("""
         SELECT c.set_code AS setCode, SUM(uc.quantity) AS count
         FROM user_cards uc INNER JOIN cards c ON uc.scryfall_id = c.scryfall_id
         GROUP BY c.set_code ORDER BY count DESC
     """)
-    fun observeCountBySet(): Flow>
+    fun observeCountBySet(): Flow<List<SetCountProjection>>
 }

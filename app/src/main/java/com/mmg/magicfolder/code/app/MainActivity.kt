@@ -5,7 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.mmg.magicfolder.app.navigation.AppNavGraph
-import com.mmg.magicfolder.core.ui.theme.MtgCollectionTheme
+import com.mmg.magicfolder.code.core.ui.theme.MtgCollectionTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

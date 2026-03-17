@@ -29,18 +29,18 @@ interface DeckDao {
     suspend fun clearDeck(deckId: Long)
 
     @Query("SELECT * FROM decks ORDER BY updated_at DESC")
-    fun observeAllDecks(): Flow>
+    fun observeAllDecks(): Flow<List<DeckEntity>>
 
     @Query("SELECT COUNT(*) FROM decks")
-    fun observeDeckCount(): Flow
+    fun observeDeckCount(): Flow<Int>
 
     @Transaction
     @Query("SELECT * FROM decks WHERE id = :deckId")
-    fun observeDeckWithCards(deckId: Long): Flow
+    fun observeDeckWithCards(deckId: Long): Flow<DeckWithCards?>
 }
 
 data class DeckWithCards(
     @Embedded val deck: DeckEntity,
     @Relation(parentColumn = "id", entityColumn = "deck_id", entity = DeckCardCrossRef::class)
-    val cards: List,
+    val cards: List<DeckCardCrossRef>
 )

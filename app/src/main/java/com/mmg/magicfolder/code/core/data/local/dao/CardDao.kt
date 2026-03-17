@@ -12,19 +12,19 @@ interface CardDao {
     suspend fun upsert(card: CardEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertAll(cards: List)
+    suspend fun upsertAll(cards: List<CardEntity>)
 
     @Query("SELECT * FROM cards WHERE scryfall_id = :id")
     suspend fun getById(id: String): CardEntity?
 
     @Query("SELECT * FROM cards WHERE scryfall_id = :id")
-    fun observeById(id: String): Flow
+    fun observeById(id: String): Flow<CardEntity?>
 
     @Query("SELECT * FROM cards WHERE scryfall_id IN (:ids)")
-    suspend fun getByIds(ids: List): List
+    suspend fun getByIds(ids: List<String>): List<CardEntity>
 
     @Query("SELECT * FROM cards WHERE name LIKE '%' || :query || '%' ORDER BY name ASC")
-    fun searchByName(query: String): Flow>
+    fun searchByName(query: String): Flow<List<CardEntity>>
 
     @Query("SELECT COUNT(*) > 0 FROM cards WHERE scryfall_id = :id AND cached_at > :minCachedAt")
     suspend fun isCacheValid(id: String, minCachedAt: Long): Boolean
@@ -43,5 +43,5 @@ interface CardDao {
     suspend fun clearStale(id: String)
 
     @Query("SELECT * FROM cards WHERE is_stale = 1")
-    fun observeStaleCards(): Flow>
+    fun observeStaleCards(): Flow<List<CardEntity>>
 }

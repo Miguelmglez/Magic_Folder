@@ -2,7 +2,7 @@ package com.mmg.magicfolder.code.core.data.local
 
 import android.content.Context
 import androidx.room.Room
-import com.mmg.magicfolder.core.data.local.dao.*
+import com.mmg.magicfolder.code.core.data.local.dao.*
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

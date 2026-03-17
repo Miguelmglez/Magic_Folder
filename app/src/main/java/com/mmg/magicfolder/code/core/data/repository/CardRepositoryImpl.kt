@@ -23,7 +23,7 @@ class CardRepositoryImpl @Inject constructor(
     private val remote:      ScryfallRemoteDataSource,
 ) : CardRepository {
 
-    override suspend fun searchCardByName(query: String): DataResult {
+    override suspend fun searchCardByName(query: String): DataResult<Card> {
         val result = remote.searchCardByName(query)
         return if (result.isSuccess) {
             val card = result.getOrThrow()
@@ -34,7 +34,7 @@ class CardRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun searchCards(query: String, page: Int): DataResult> {
+    override suspend fun searchCards(query: String, page: Int): DataResult<List<Card>> {
         val result = remote.searchCards(query, page)
         return if (result.isSuccess) {
             val cards = result.getOrThrow()
@@ -45,7 +45,7 @@ class CardRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getCardById(scryfallId: String): DataResult {
+    override suspend fun getCardById(scryfallId: String): DataResult<Card> {
         val cached = cardDao.getById(scryfallId)
         if (cached != null && CachePolicy.isFresh(cached.cachedAt))
             return DataResult.Success(cached.toDomain())
@@ -72,7 +72,7 @@ class CardRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun observeCard(scryfallId: String): Flow =
+    override fun observeCard(scryfallId: String): Flow<Card?> =
         cardDao.observeById(scryfallId).map { it?.toDomain() }
 
     override suspend fun refreshCollectionPrices() {

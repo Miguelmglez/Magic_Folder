@@ -1,7 +1,7 @@
 package com.mmg.magicfolder.code.core.network
 
 import android.content.Context
-import com.mmg.magicfolder.core.data.remote.ScryfallApi
+import com.mmg.magicfolder.code.core.data.remote.ScryfallApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
