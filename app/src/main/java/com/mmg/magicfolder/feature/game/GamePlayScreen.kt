@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import com.mmg.magicfolder.core.ui.components.FloatingDelta
 import com.mmg.magicfolder.core.ui.components.HexGridBackground
 import com.mmg.magicfolder.core.ui.theme.CinzelFontFamily
@@ -121,11 +122,10 @@ fun GamePlayScreen(
             )
         }
 
-        // ── Winner overlay ────────────────────────────────────────────────────
-        uiState.winner?.let { winner ->
-            WinnerOverlay(
-                winner     = winner,
-                turnNumber = uiState.turnNumber,
+        // ── Game result screen ────────────────────────────────────────────────
+        uiState.gameResult?.let { result ->
+            GameResultScreen(
+                gameResult = result,
                 onNewGame  = { viewModel.resetGame(); onNewGame() },
                 onBackHome = onBackHome,
             )
@@ -359,11 +359,11 @@ private fun PlayerCard(
                     modifier              = Modifier.weight(1f).fillMaxWidth(),
                 ) {
                     LifeButton(
-                        label    = "−",
-                        theme    = theme,
-                        onClick  = { onLife(-1) },
-                        onRepeat = { onLife(-1) },
-                        modifier = Modifier.size(48.dp),
+                        label        = "−",
+                        theme        = theme,
+                        direction    = -1,
+                        onLifeChange = onLife,
+                        modifier     = Modifier.size(48.dp),
                     )
 
                     Box(contentAlignment = Alignment.Center) {
@@ -386,11 +386,11 @@ private fun PlayerCard(
                     }
 
                     LifeButton(
-                        label    = "+",
-                        theme    = theme,
-                        onClick  = { onLife(+1) },
-                        onRepeat = { onLife(+1) },
-                        modifier = Modifier.size(48.dp),
+                        label        = "+",
+                        theme        = theme,
+                        direction    = +1,
+                        onLifeChange = onLife,
+                        modifier     = Modifier.size(48.dp),
                     )
                 }
 
@@ -432,24 +432,16 @@ private fun PlayerCard(
 
 @Composable
 private fun LifeButton(
-    label:    String,
-    theme:    PlayerThemeColors,
-    onClick:  () -> Unit,
-    onRepeat: () -> Unit,
-    modifier: Modifier = Modifier,
+    label:        String,
+    theme:        PlayerThemeColors,
+    direction:    Int,
+    onLifeChange: (Int) -> Unit,
+    modifier:     Modifier = Modifier,
 ) {
-    val mc = MaterialTheme.magicColors
-    var pressing by remember { mutableStateOf(false) }
-
-    LaunchedEffect(pressing) {
-        if (pressing) {
-            kotlinx.coroutines.delay(400L)
-            while (pressing) {
-                onRepeat()
-                kotlinx.coroutines.delay(120L)
-            }
-        }
-    }
+    val mc         = MaterialTheme.magicColors
+    val scope      = rememberCoroutineScope()
+    var isPressed  by remember { mutableStateOf(false) }
+    var pressStart by remember { mutableStateOf(0L) }
 
     Box(
         contentAlignment = Alignment.Center,
@@ -463,8 +455,30 @@ private fun LifeButton(
             )
             .pointerInput(Unit) {
                 detectTapGestures(
-                    onTap   = { onClick() },
-                    onPress = { pressing = true; tryAwaitRelease(); pressing = false },
+                    onPress = {
+                        isPressed  = true
+                        pressStart = System.currentTimeMillis()
+                        onLifeChange(direction)   // tap inmediato
+
+                        val job = scope.launch {
+                            kotlinx.coroutines.delay(500L)
+                            while (isPressed) {
+                                val elapsed = System.currentTimeMillis() - pressStart
+                                val (intervalMs, absDelta) = when {
+                                    elapsed > 3000L -> 60L  to 10
+                                    elapsed > 2000L -> 80L  to 5
+                                    elapsed > 1000L -> 100L to 1
+                                    else            -> 150L to 1
+                                }
+                                onLifeChange(direction * absDelta)
+                                kotlinx.coroutines.delay(intervalMs)
+                            }
+                        }
+
+                        tryAwaitRelease()
+                        isPressed = false
+                        job.cancel()
+                    }
                 )
             },
     ) {
