@@ -23,6 +23,7 @@ data class GameUiState(
     val turnNumber:       Int               = 1,
     val phaseStops:       List<PhaseStop>   = emptyList(),
     val winner:           Player?           = null,
+    val gameResult:       GameResult?       = null,
     val gameStartTime:    Long              = System.currentTimeMillis(),
     // UI visibility
     val showPhasePanel:              Boolean         = false,
@@ -237,7 +238,35 @@ class GameViewModel @Inject constructor(
         val alive = withEliminations.players.filter { !it.eliminated }
         val newWinner = if (alive.size == 1 && players.size > 1) alive.first()
                         else withEliminations.winner
-        return withEliminations.copy(winner = newWinner)
+        val newGameResult = if (newWinner != null && winner == null) {
+            val duration = System.currentTimeMillis() - withEliminations.gameStartTime
+            GameResult(
+                winner        = newWinner,
+                allPlayers    = withEliminations.players,
+                gameMode      = withEliminations.mode,
+                totalTurns    = withEliminations.turnNumber,
+                durationMs    = duration,
+                playerResults = withEliminations.players.map { p ->
+                    PlayerResult(
+                        player                       = p,
+                        finalLife                    = p.life,
+                        finalPoison                  = p.poison,
+                        totalCommanderDamageDealt    = p.commanderDamage.values.sum(),
+                        totalCommanderDamageReceived = withEliminations.players
+                            .filter { it.id != p.id }
+                            .sumOf { it.commanderDamage[p.id] ?: 0 },
+                        eliminationReason = when {
+                            p.life <= 0    -> EliminationReason.LIFE
+                            p.poison >= 10 -> EliminationReason.POISON
+                            p.commanderDamage.values.any { it >= 21 }
+                                           -> EliminationReason.COMMANDER_DAMAGE
+                            else           -> null
+                        }
+                    )
+                }
+            )
+        } else withEliminations.gameResult
+        return withEliminations.copy(winner = newWinner, gameResult = newGameResult)
     }
 
     private fun nextActivePlayer(s: GameUiState): Int {
