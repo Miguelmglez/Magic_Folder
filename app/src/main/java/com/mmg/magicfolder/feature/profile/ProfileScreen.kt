@@ -31,6 +31,7 @@ import com.mmg.magicfolder.core.data.local.dao.DeckStatsRow
 import com.mmg.magicfolder.core.data.local.entity.GameSessionWithPlayers
 import com.mmg.magicfolder.core.domain.model.Achievement
 import com.mmg.magicfolder.core.domain.model.CollectionStats
+import com.mmg.magicfolder.core.ui.theme.AppTheme
 import com.mmg.magicfolder.core.ui.theme.magicColors
 import com.mmg.magicfolder.core.ui.theme.magicTypography
 import java.text.SimpleDateFormat
@@ -153,10 +154,9 @@ fun ProfileScreen(
 
             // ── Theme selector ────────────────────────────────────────────────
             item {
-                ThemeSection(
-                    selected = uiState.selectedTheme,
-                    onSelect = viewModel::selectTheme,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                ThemeSelectorSection(
+                    currentTheme     = uiState.currentTheme,
+                    onThemeSelected  = viewModel::selectTheme,
                 )
             }
 
@@ -571,32 +571,107 @@ private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun ThemeSection(
-    selected: AppTheme,
-    onSelect: (AppTheme) -> Unit,
-    modifier: Modifier = Modifier,
+private fun ThemeSelectorSection(
+    currentTheme:    AppTheme,
+    onThemeSelected: (AppTheme) -> Unit,
+) {
+    Column(
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        SectionTitle(stringResource(R.string.profile_section_themes))
+        Row(
+            modifier              = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            ThemeTile(
+                name          = "Neon Void",
+                emoji         = "⚡",
+                previewColors = listOf(Color(0xFF030508), Color(0xFFC77DFF), Color(0xFF4CC9F0)),
+                isSelected    = currentTheme is AppTheme.NeonVoid,
+                onClick       = { onThemeSelected(AppTheme.NeonVoid) },
+                modifier      = Modifier.weight(1f),
+            )
+            ThemeTile(
+                name          = "Grimoire",
+                emoji         = "📜",
+                previewColors = listOf(Color(0xFF1A1208), Color(0xFFC9A84C), Color(0xFF7AB648)),
+                isSelected    = currentTheme is AppTheme.MedievalGrimoire,
+                onClick       = { onThemeSelected(AppTheme.MedievalGrimoire) },
+                modifier      = Modifier.weight(1f),
+            )
+            ThemeTile(
+                name          = "Cosmos",
+                emoji         = "✨",
+                previewColors = listOf(Color(0xFF040812), Color(0xFF7B61FF), Color(0xFFFF61DC)),
+                isSelected    = currentTheme is AppTheme.ArcaneCosmos,
+                onClick       = { onThemeSelected(AppTheme.ArcaneCosmos) },
+                modifier      = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ThemeTile(
+    name:          String,
+    emoji:         String,
+    previewColors: List<Color>,
+    isSelected:    Boolean,
+    onClick:       () -> Unit,
+    modifier:      Modifier = Modifier,
 ) {
     val mc = MaterialTheme.magicColors
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionTitle("Theme")
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            AppTheme.entries.forEach { theme ->
-                val isSelected = theme == selected
-                Surface(
-                    onClick = { onSelect(theme) },
-                    shape   = RoundedCornerShape(10.dp),
-                    color   = if (isSelected) mc.primaryAccent.copy(alpha = 0.15f) else mc.surface,
-                    border  = if (isSelected) BorderStroke(1.dp, mc.primaryAccent) else null,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(
-                        text     = theme.displayName,
-                        modifier = Modifier.padding(vertical = 10.dp),
-                        textAlign = TextAlign.Center,
-                        style    = MaterialTheme.magicTypography.bodySmall,
-                        color    = if (isSelected) mc.primaryAccent else mc.textPrimary,
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape    = RoundedCornerShape(14.dp),
+        color    = if (isSelected) mc.primaryAccent.copy(0.1f) else mc.surface,
+        border   = BorderStroke(
+            width = if (isSelected) 2.dp else 0.5.dp,
+            color = if (isSelected) mc.primaryAccent else mc.surfaceVariant,
+        ),
+    ) {
+        Column(
+            modifier            = Modifier.padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment     = Alignment.CenterVertically,
+            ) {
+                previewColors.forEachIndexed { index, color ->
+                    Box(
+                        modifier = Modifier
+                            .size(if (index == 0) 28.dp else 18.dp)
+                            .clip(CircleShape)
+                            .background(color)
+                            .then(
+                                if (index == 0)
+                                    Modifier.border(
+                                        1.5.dp,
+                                        previewColors.getOrElse(1) { Color.White }.copy(0.5f),
+                                        CircleShape,
+                                    )
+                                else Modifier
+                            ),
                     )
                 }
+            }
+            Text(
+                text      = name,
+                style     = MaterialTheme.magicTypography.labelSmall,
+                color     = if (isSelected) mc.primaryAccent else mc.textSecondary,
+                textAlign = TextAlign.Center,
+            )
+            if (isSelected) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(mc.primaryAccent),
+                )
             }
         }
     }
@@ -647,3 +722,13 @@ private fun AppInfoFooter(modifier: Modifier = Modifier) {
         Text("Developed with ❤️ for the MTG community", style = MaterialTheme.magicTypography.labelSmall, color = mc.textDisabled, textAlign = TextAlign.Center)
     }
 }
+
+private fun formatDuration(ms: Long): String {
+    val minutes = ms / 60_000L
+    val hours   = minutes / 60
+    val mins    = minutes % 60
+    return if (hours > 0) "${hours}h ${mins}m" else "${mins}m"
+}
+
+private fun formatDate(timestamp: Long): String =
+    SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(timestamp))
