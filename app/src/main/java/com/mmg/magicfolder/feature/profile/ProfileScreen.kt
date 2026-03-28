@@ -152,6 +152,8 @@ fun ProfileScreen(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
+            // ── Theme selector — hidden in v1, will be re-enabled in v2 ──────────
+            // ThemeSection(selected = state.selectedTheme, onSelect = viewModel::selectTheme)
 
             // ── Language selector ─────────────────────────────────────────────
             item {
