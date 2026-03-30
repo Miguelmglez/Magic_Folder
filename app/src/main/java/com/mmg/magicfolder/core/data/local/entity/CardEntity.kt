@@ -17,6 +17,7 @@ data class CardEntity(
     @ColumnInfo(name = "colors")         val colors:         String,  // JSON: ["W","U"]
     @ColumnInfo(name = "color_identity") val colorIdentity:  String,  // JSON: ["W","U"]
     @ColumnInfo(name = "type_line")      val typeLine:       String,
+    @ColumnInfo(name = "printed_type_line")val printedTypeLine:       String,
     @ColumnInfo(name = "oracle_text")    val oracleText:     String?,
     @ColumnInfo(name = "printed_text")   val printedText:     String?,
     @ColumnInfo(name = "keywords")       val keywords:       String,  // JSON list

@@ -21,7 +21,7 @@ import com.mmg.magicfolder.core.data.local.entity.*
         TournamentPlayerEntity::class,
         TournamentMatchEntity::class,
     ],
-    version = 8,
+    version = 9,
     exportSchema = true,
 )
 @TypeConverters(RoomConverters::class)

@@ -48,7 +48,8 @@ fun CardDto.toDomain(): Card {
         staleReason = null,
         cachedAt = System.currentTimeMillis(),
         printedName = printedName,
-        printedText = printedText
+        printedText = printedText,
+        printedTypeLine = printedTypeLine?:""
     )
 }
 
