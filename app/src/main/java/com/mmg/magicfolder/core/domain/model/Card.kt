@@ -9,6 +9,7 @@ data class Card(
     val colors:           List<String>,
     val colorIdentity:    List<String>,
     val typeLine:         String,
+    val printedTypeLine:  String,
     val oracleText:       String?,
     val printedText:      String?,
     val keywords:         List<String>,

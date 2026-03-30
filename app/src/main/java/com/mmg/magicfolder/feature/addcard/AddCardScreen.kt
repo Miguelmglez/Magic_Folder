@@ -323,7 +323,7 @@ private fun SearchResultItem(card: Card, onClick: () -> Unit) {
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text     = card.typeLine,
+                    text     = card.printedTypeLine,
                     style    = ty.bodySmall,
                     color    = mc.textSecondary,
                     maxLines = 1,

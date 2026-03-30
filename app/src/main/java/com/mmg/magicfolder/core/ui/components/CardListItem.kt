@@ -73,7 +73,7 @@ fun CardListItem(
                     size     = 14.dp,
                 )
                 Text(
-                    text     = "${card.setCode.uppercase()} · ${card.typeLine.substringBefore(" —").trim()}",
+                    text     = "${card.setCode.uppercase()} · ${card.printedTypeLine.substringBefore(" —").trim()}",
                     style    = MaterialTheme.magicTypography.bodySmall,
                     color    = mc.textSecondary,
                     maxLines = 1,

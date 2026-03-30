@@ -12,6 +12,7 @@ data class CardDto(
     @SerializedName("colors")           val colors:          List<String>?,
     @SerializedName("color_identity")   val colorIdentity:   List<String>,
     @SerializedName("type_line")        val typeLine:        String,
+    @SerializedName("printed_type_line")     val printedTypeLine:String?,
     @SerializedName("oracle_text")      val oracleText:      String?,
     @SerializedName("printed_text")     val printedText:      String?,
     @SerializedName("keywords")         val keywords:        List<String>,

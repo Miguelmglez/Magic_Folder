@@ -57,6 +57,7 @@ fun CardEntity.toDomainCard(): Card = Card(
     tags = tags.toTagList(),
     printedName = printedName,
     printedText = printedText,
+    printedTypeLine = printedTypeLine
 )
 
 fun Card.toEntityCard(): CardEntity = CardEntity(
@@ -100,6 +101,7 @@ fun Card.toEntityCard(): CardEntity = CardEntity(
     tags = tags.toTagsJson(),
     printedName = printedName,
     printedText = printedText,
+    printedTypeLine =  printedTypeLine
 )
 
 fun List<CardEntity>.toDomainCardList(): List<Card> = map { it.toDomainCard() }
