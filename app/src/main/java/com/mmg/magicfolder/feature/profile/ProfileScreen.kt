@@ -3,14 +3,14 @@ package com.mmg.magicfolder.feature.profile
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,22 +18,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.mmg.magicfolder.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.mmg.magicfolder.R
 import com.mmg.magicfolder.core.data.local.dao.DeckStatsRow
 import com.mmg.magicfolder.core.data.local.entity.GameSessionWithPlayers
 import com.mmg.magicfolder.core.domain.model.Achievement
 import com.mmg.magicfolder.core.domain.model.CollectionStats
-import com.mmg.magicfolder.core.ui.components.ManaSymbol
 import com.mmg.magicfolder.core.ui.components.ManaColor
+import com.mmg.magicfolder.core.ui.components.ManaSymbol
 import com.mmg.magicfolder.core.ui.theme.AppTheme
+import com.mmg.magicfolder.core.ui.theme.MarcellusFontFamily
+import com.mmg.magicfolder.core.ui.theme.ThemeBackground
 import com.mmg.magicfolder.core.ui.theme.magicColors
 import com.mmg.magicfolder.core.ui.theme.magicTypography
 import java.text.SimpleDateFormat
@@ -46,6 +52,11 @@ fun ProfileScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val mc = MaterialTheme.magicColors
+    var showAvatarPicker by remember { mutableStateOf(false) }
+
+    if (showAvatarPicker) {
+        AvatarPickerSheet(onDismiss = { showAvatarPicker = false })
+    }
 
     Scaffold(
         containerColor = mc.background,
@@ -77,8 +88,10 @@ fun ProfileScreen(
             // ── Hero ──────────────────────────────────────────────────────────
             item {
                 ProfileHeroSection(
-                    uiState      = uiState,
-                    onNameSaved  = viewModel::savePlayerName,
+                    name          = uiState.playerName,
+                    playStyle     = "${uiState.playStyle.icon} ${uiState.playStyle.label}",
+                    avatarUrl     = uiState.avatarUrl,
+                    onAvatarClick = { showAvatarPicker = true },
                 )
             }
 
@@ -169,91 +182,119 @@ fun ProfileScreen(
 
 @Composable
 private fun ProfileHeroSection(
-    uiState:    ProfileViewModel.UiState,
-    onNameSaved: (String) -> Unit,
+    name: String,
+    playStyle: String?,
+    avatarUrl: String?,
+    onAvatarClick: () -> Unit,
 ) {
     val mc = MaterialTheme.magicColors
-    var editedName by remember(uiState.playerName) { mutableStateOf(uiState.playerName) }
 
-    Column(
-        modifier            = Modifier
+    Box(
+        modifier = Modifier
             .fillMaxWidth()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        mc.primaryAccent.copy(alpha = 0.08f),
-                        mc.background,
-                    )
-                )
-            )
-            .padding(top = 8.dp, bottom = 24.dp, start = 16.dp, end = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .height(220.dp),
     ) {
-        // Gradient avatar
-        Box(
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            mc.primaryAccent.copy(alpha = 0.35f),
-                            mc.goldMtg.copy(alpha = 0.15f),
-                        )
-                    )
+        // Background: planeswalker art or fallback gradient
+        if (avatarUrl != null) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(avatarUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                mc.primaryAccent.copy(alpha = 0.3f),
+                                mc.background,
+                            ),
+                        ),
+                    ),
+            ) {
+                ThemeBackground(modifier = Modifier.fillMaxSize())
+                Text(
+                    text = name.take(1).uppercase().ifEmpty { "✦" },
+                    fontFamily = MarcellusFontFamily,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 72.sp,
+                    color = mc.primaryAccent.copy(alpha = 0.3f),
+                    modifier = Modifier.align(Alignment.Center),
                 )
-                .border(2.dp, mc.primaryAccent.copy(alpha = 0.6f), CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("✦", style = MaterialTheme.magicTypography.displayMedium, color = mc.primaryAccent)
+            }
         }
 
-        // Inline editable name
-        BasicTextField(
-            value         = editedName,
-            onValueChange = { editedName = it },
-            singleLine    = true,
-            textStyle     = MaterialTheme.magicTypography.titleLarge.copy(
-                color     = mc.textPrimary,
-                textAlign = TextAlign.Center,
-            ),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = {
-                if (editedName.isNotBlank()) onNameSaved(editedName)
-            }),
-            decorationBox = { innerTextField ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    innerTextField()
-                    Spacer(Modifier.height(3.dp))
-                    Box(
-                        modifier = Modifier
-                            .width(160.dp)
-                            .height(1.dp)
-                            .background(mc.primaryAccent.copy(alpha = 0.4f))
-                    )
-                }
-            },
-            modifier = Modifier.widthIn(min = 80.dp, max = 220.dp),
+        // Dark gradient overlay (bottom→top) for text legibility
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color.Transparent,
+                            Color.Black.copy(alpha = 0.5f),
+                            Color.Black.copy(alpha = 0.85f),
+                        ),
+                    ),
+                ),
         )
 
-        // Play style badge
-        Surface(
-            shape  = RoundedCornerShape(20.dp),
-            color  = mc.primaryAccent.copy(alpha = 0.1f),
-            border = BorderStroke(1.dp, mc.primaryAccent.copy(alpha = 0.3f)),
+        // Edit button — top-right corner
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(12.dp)
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(Color.Black.copy(alpha = 0.5f))
+                .clickable(onClick = onAvatarClick),
+            contentAlignment = Alignment.Center,
         ) {
-            Row(
-                modifier              = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment     = Alignment.CenterVertically,
-            ) {
-                Text(uiState.playStyle.icon, fontSize = 14.sp)
-                Text(
-                    uiState.playStyle.label,
-                    style = MaterialTheme.magicTypography.labelSmall,
-                    color = mc.primaryAccent,
-                )
+            Icon(
+                imageVector = Icons.Default.Edit,
+                contentDescription = stringResource(R.string.avatar_picker_edit_hint),
+                tint = Color.White.copy(alpha = 0.85f),
+                modifier = Modifier.size(16.dp),
+            )
+        }
+
+        // Name + play style badge — bottom
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = name.ifBlank { stringResource(R.string.game_setup_default_player_name) },
+                fontFamily = MarcellusFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 26.sp,
+                color = Color.White,
+                letterSpacing = 1.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (playStyle != null) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = mc.primaryAccent.copy(alpha = 0.25f),
+                    border = BorderStroke(0.5.dp, mc.primaryAccent.copy(alpha = 0.5f)),
+                ) {
+                    Text(
+                        text = playStyle,
+                        style = MaterialTheme.magicTypography.labelSmall,
+                        color = mc.primaryAccent,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+                    )
+                }
             }
         }
     }

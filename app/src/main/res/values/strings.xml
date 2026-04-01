@@ -327,6 +327,13 @@
     <string name="survey_save_button">Save →</string>
     <string name="survey_free_text_hint">Optional notes about this game…</string>
 
+    <!-- Avatar picker -->
+    <string name="avatar_picker_title">Choose your Planeswalker</string>
+    <string name="avatar_picker_filter_label">Filter by color</string>
+    <string name="avatar_picker_confirm">Use this art</string>
+    <string name="avatar_picker_remove">Remove photo</string>
+    <string name="avatar_picker_edit_hint">Edit profile photo</string>
+
     <!-- Game setup -->
     <string name="game_setup_you_badge">You</string>
     <string name="game_setup_default_player_name">Player 1</string>
