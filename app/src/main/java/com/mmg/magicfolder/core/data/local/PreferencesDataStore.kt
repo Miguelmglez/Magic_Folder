@@ -4,9 +4,11 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -19,6 +21,7 @@ class PreferencesDataStore @Inject constructor(
 ) {
     private val LAST_PRICE_REFRESH_KEY = longPreferencesKey("last_price_refresh")
     private val AUTO_REFRESH_KEY       = booleanPreferencesKey("auto_refresh_prices")
+    private val AVATAR_URL_KEY         = stringPreferencesKey("avatar_url")
 
     val lastPriceRefreshFlow: Flow<Long?> = context.priceDataStore.data
         .map { it[LAST_PRICE_REFRESH_KEY] }
@@ -32,5 +35,20 @@ class PreferencesDataStore @Inject constructor(
 
     suspend fun saveAutoRefreshPrices(enabled: Boolean) {
         context.priceDataStore.edit { it[AUTO_REFRESH_KEY] = enabled }
+    }
+
+    // ── Avatar URL ────────────────────────────────────────────────────────────
+
+    val avatarUrlFlow: Flow<String?> = context.priceDataStore.data
+        .map { it[AVATAR_URL_KEY] }
+        .catch { emit(null) }
+
+    suspend fun saveAvatarUrl(url: String?) {
+        context.priceDataStore.edit { preferences ->
+            if (url == null)
+                preferences.remove(AVATAR_URL_KEY)
+            else
+                preferences[AVATAR_URL_KEY] = url
+        }
     }
 }

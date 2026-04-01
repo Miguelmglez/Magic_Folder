@@ -3,6 +3,7 @@ package com.mmg.magicfolder.feature.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mmg.magicfolder.core.data.local.LanguagePreference
+import com.mmg.magicfolder.core.data.local.PreferencesDataStore
 import com.mmg.magicfolder.core.data.local.dao.DeckStatsRow
 import com.mmg.magicfolder.core.data.local.dao.SurveyAnswerDao
 import com.mmg.magicfolder.core.data.local.entity.GameSessionWithPlayers
@@ -40,6 +41,7 @@ class ProfileViewModel @Inject constructor(
     private val gameSessionRepo:       GameSessionRepository,
     private val surveyAnswerDao:       SurveyAnswerDao,
     private val langPref:              LanguagePreference,
+    private val preferencesDataStore:  PreferencesDataStore,
     private val checkAchievementsUseCase: CheckAchievementsUseCase,
 ) : ViewModel() {
 
@@ -48,6 +50,7 @@ class ProfileViewModel @Inject constructor(
         val currentTheme:            AppTheme   = AppTheme.NeonVoid,
         val playStyle:               PlayStyle  = PlayStyle.BALANCED,
         val isLoading:               Boolean    = true,
+        val avatarUrl:               String?    = null,
         // Collection
         val collectionStats:         CollectionStats?           = null,
         val favouriteColor:          String?                    = null,
@@ -81,6 +84,11 @@ class ProfileViewModel @Inject constructor(
 
     init {
         // ── Preferences ───────────────────────────────────────────────────────
+        preferencesDataStore.avatarUrlFlow
+            .onEach { url -> _uiState.update { it.copy(avatarUrl = url) } }
+            .catch { /* ignore */ }
+            .launchIn(viewModelScope)
+
         langPref.playerNameFlow
             .onEach { name -> _uiState.update { it.copy(playerName = name) } }
             .catch { /* ignore */ }
