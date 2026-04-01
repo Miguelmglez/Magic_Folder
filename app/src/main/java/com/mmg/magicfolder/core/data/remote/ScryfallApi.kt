@@ -13,10 +13,11 @@ interface ScryfallApi {
 
     @GET("cards/search")
     suspend fun searchCards(
-        @Query("q")     query: String,
-        @Query("order") order: String = "name",
-        @Query("dir")   dir:   String = "auto",
-        @Query("page")  page:  Int    = 1,
+        @Query("q")      query:  String,
+        @Query("order")  order:  String = "name",
+        @Query("dir")    dir:    String = "auto",
+        @Query("unique") unique: String = "cards",
+        @Query("page")   page:   Int    = 1,
     ): SearchResultDto
 
     @GET("cards/{id}")

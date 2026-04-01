@@ -1,6 +1,7 @@
 package com.mmg.magicfolder.core.data.remote
 
 import com.mmg.magicfolder.core.data.remote.dto.*
+import com.mmg.magicfolder.core.data.remote.dto.SearchResultDto
 import com.mmg.magicfolder.core.data.remote.mapper.toDomain
 import com.mmg.magicfolder.core.domain.model.Card
 import com.mmg.magicfolder.core.network.ScryfallRequestQueue
@@ -53,6 +54,19 @@ class ScryfallRemoteDataSource @Inject constructor(
             }
             allCards.toDomain()
         }
+
+    // Reutilizes /cards/search with unique=art to get one entry per unique artwork
+    suspend fun searchPlaneswalkerArts(
+        query: String,
+        page:  Int = 1,
+    ): SearchResultDto = requestQueue.execute {
+        api.searchCards(
+            query  = query,
+            order  = "name",
+            unique = "art",
+            page   = page,
+        )
+    }
 
     private suspend fun <T> safeCall(block: suspend () -> T): Result<T> =
         withContext(Dispatchers.IO) { runCatching { block() } }
