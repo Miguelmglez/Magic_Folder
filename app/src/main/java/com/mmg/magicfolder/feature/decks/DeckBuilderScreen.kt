@@ -17,8 +17,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -30,6 +32,7 @@ import com.mmg.magicfolder.core.domain.model.DeckBuilderState
 import com.mmg.magicfolder.core.domain.model.DeckCard
 import com.mmg.magicfolder.core.domain.model.DeckFormat
 import com.mmg.magicfolder.core.domain.model.ReviewGroupBy
+import com.mmg.magicfolder.core.ui.theme.MagicTheme
 import com.mmg.magicfolder.core.ui.theme.magicColors
 import com.mmg.magicfolder.core.ui.theme.magicTypography
 import com.mmg.magicfolder.feature.decks.components.BuildingFilters
@@ -39,7 +42,6 @@ import com.mmg.magicfolder.feature.decks.components.DeckCardRow
 import com.mmg.magicfolder.feature.decks.components.LandsSection
 import com.mmg.magicfolder.feature.decks.components.ManaCurveChart
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeckBuilderScreen(
     onNavigateBack: () -> Unit,
@@ -786,3 +788,99 @@ private fun cmcLabel(cmc: Double): String = when (cmc.toInt()) {
     4    -> "4"
     else -> "5+"
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Previews
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Preview(showBackground = true, name = "Setup Step")
+@Composable
+private fun SetupStepPreview() {
+    MagicTheme {
+        SetupStep(
+            state = DeckBuilderState(),
+            commanderResults = emptyList(),
+            isSearchingCommander = false,
+            onCommanderSearch = {},
+            onCommanderClear = {},
+            onBuild = { _, _, _ -> },
+            modifier = Modifier
+        )
+    }
+}
+
+
+@Preview(showBackground = true, name = "Review Step")
+@Composable
+private fun ReviewStepPreview() {
+    val mockCard = createMockCard()
+    val state = DeckBuilderState(
+        step = BuilderStep.REVIEW,
+        deckName = "Preview Deck",
+        format = DeckFormat.STANDARD,
+        mainboard = listOf(
+            DeckCard(mockCard, quantity = 4),
+            DeckCard(createMockCard("2", "Lightning Bolt", "{R}", 1.0, "Instant", "common"), quantity = 4)
+        )
+    )
+    MagicTheme {
+        ReviewStep(
+            state = state,
+            onRemoveFromMainboard = {},
+            onRemoveFromSideboard = {},
+            onMoveToSideboard = {},
+            onMoveToMainboard = {},
+            onRemoveNonBasicLand = {},
+            onSetGroupBy = {},
+            onSave = {},
+            modifier = Modifier
+        )
+    }
+}
+
+private fun createMockCard(
+    id: String = "1",
+    name: String = "Black Lotus",
+    manaCost: String? = "{0}",
+    cmc: Double = 0.0,
+    typeLine: String = "Artifact",
+    rarity: String = "mythic"
+) = Card(
+    scryfallId = id,
+    name = name,
+    printedName = name,
+    manaCost = manaCost,
+    cmc = cmc,
+    colors = if (manaCost?.contains("R") == true) listOf("R") else emptyList(),
+    colorIdentity = if (manaCost?.contains("R") == true) listOf("R") else emptyList(),
+    typeLine = typeLine,
+    printedTypeLine = typeLine,
+    oracleText = "T, Sacrifice Black Lotus: Add three mana of any one color.",
+    printedText = "T, Sacrifice Black Lotus: Add three mana of any one color.",
+    keywords = emptyList(),
+    power = null,
+    toughness = null,
+    loyalty = null,
+    setCode = "lea",
+    setName = "Limited Edition Alpha",
+    collectorNumber = "232",
+    rarity = rarity,
+    releasedAt = "1993-08-05",
+    frameEffects = emptyList(),
+    promoTypes = emptyList(),
+    lang = "en",
+    imageNormal = null,
+    imageArtCrop = null,
+    imageBackNormal = null,
+    priceUsd = 100.0,
+    priceUsdFoil = null,
+    priceEur = 80.0,
+    priceEurFoil = null,
+    legalityStandard = "legal",
+    legalityPioneer = "legal",
+    legalityModern = "legal",
+    legalityCommander = "legal",
+    flavorText = null,
+    artist = "Artist",
+    scryfallUri = ""
+)

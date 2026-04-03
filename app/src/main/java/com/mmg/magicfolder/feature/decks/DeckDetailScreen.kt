@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
@@ -29,9 +30,10 @@ import com.mmg.magicfolder.core.ui.theme.magicTypography
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeckDetailScreen(
-    deckId:    Long,
-    onBack:    () -> Unit,
-    viewModel: DeckDetailViewModel = hiltViewModel(),
+    deckId:      Long,
+    onBack:      () -> Unit,
+    onAddCards:  () -> Unit,
+    viewModel:   DeckDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val mc = MaterialTheme.magicColors
@@ -39,6 +41,15 @@ fun DeckDetailScreen(
 
     Scaffold(
         containerColor = mc.background,
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick           = onAddCards,
+                containerColor    = mc.primaryAccent,
+                contentColor      = mc.background,
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add cards")
+            }
+        },
         topBar = {
             Surface(
                 color = mc.backgroundSecondary,
