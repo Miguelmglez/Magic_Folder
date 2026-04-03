@@ -9,12 +9,17 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -192,7 +197,7 @@ private fun ProfileHeroSection(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(220.dp),
+            .height(250.dp),
     ) {
         // Background: planeswalker art or fallback gradient
         if (avatarUrl != null) {
@@ -282,7 +287,7 @@ private fun ProfileHeroSection(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (playStyle != null) {
+            /*if (playStyle != null) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = mc.primaryAccent.copy(alpha = 0.25f),
@@ -295,7 +300,7 @@ private fun ProfileHeroSection(
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
                     )
                 }
-            }
+            }*/
         }
     }
 }
