@@ -83,7 +83,7 @@ class GameViewModel @Inject constructor(
                     launch(Dispatchers.IO) {
                         runCatching { gameSessionRepo.saveGameSession(result) }
                             .onSuccess { id ->
-                                _uiState.update { it.copy(lastSessionId = id, isGameRunning = true) }
+                                _uiState.update { it.copy(lastSessionId = id, isGameRunning = false) }
                                 recordTournamentResultIfNeeded(id, result)
                             }
                     }
@@ -435,6 +435,7 @@ class GameViewModel @Inject constructor(
             activeTournamentId   = tournamentId,
             activeTournamentMatchId = matchId,
             tournamentPlayerIds  = tournamentPlayerIds,
+            isGameRunning        = true
         )
         _toolsState.value = GlobalToolsState()
     }
@@ -470,7 +471,12 @@ class GameViewModel @Inject constructor(
             )
         }
         val layout = selectedLayout ?: LayoutTemplates.getDefaultLayout(players.size)
-        _uiState.update { it.copy(players = players, activePlayerId = players.first().id, activeLayout = layout) }
+        _uiState.update { it.copy(
+            players = players,
+            activePlayerId = players.first().id,
+            activeLayout = layout,
+            isGameRunning = true
+        ) }
     }
 
     companion object {
@@ -491,7 +497,7 @@ class GameViewModel @Inject constructor(
                 activePlayerId = players.first().id,
                 activeLayout   = LayoutTemplates.getDefaultLayout(clampedCount),
                 gameStartTime  = System.currentTimeMillis(),
-                isGameRunning = true
+                isGameRunning = false
             )
         }
 
