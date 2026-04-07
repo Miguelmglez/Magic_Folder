@@ -38,15 +38,16 @@ fun NewsSourcesSettingsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.news_sources_title),
-                        style = mt.titleLarge,
-                        color = mc.textPrimary,
-                    )
-                },
-                navigationIcon = {
+            Surface(
+                color = mc.backgroundSecondary,
+                modifier = Modifier.statusBarsPadding()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     IconButton(onClick = onBack) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
@@ -54,9 +55,14 @@ fun NewsSourcesSettingsScreen(
                             tint = mc.textPrimary,
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = mc.backgroundSecondary),
-            )
+                    Text(
+                        text = stringResource(R.string.news_sources_title),
+                        style = mt.titleLarge,
+                        color = mc.textPrimary,
+                        modifier = Modifier.padding(start = 12.dp)
+                    )
+                }
+            }
         },
     ) { padding ->
         LazyColumn(
@@ -141,10 +147,15 @@ private fun SourceItem(
         Column(modifier = Modifier.weight(1f)) {
             Text(source.name, style = mt.bodyLarge, color = mc.textPrimary)
         }
+        
         Switch(
             checked = source.isEnabled,
             onCheckedChange = onToggle,
-            colors = SwitchDefaults.colors(checkedThumbColor = mc.primaryAccent),
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = mc.surface,
+                checkedTrackColor = mc.primaryAccent,
+                checkedIconColor = mc.primaryAccent,
+            ),
         )
         if (!source.isDefault) {
             IconButton(onClick = onDelete) {

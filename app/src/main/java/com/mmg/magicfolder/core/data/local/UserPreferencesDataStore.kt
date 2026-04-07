@@ -1,7 +1,9 @@
 package com.mmg.magicfolder.core.data.local
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -11,6 +13,8 @@ import com.mmg.magicfolder.core.domain.model.NewsLanguage
 import com.mmg.magicfolder.core.domain.model.PreferredCurrency
 import com.mmg.magicfolder.core.domain.model.UserPreferences
 import com.mmg.magicfolder.core.domain.repository.UserPreferencesRepository
+import com.mmg.magicfolder.core.ui.theme.AppTheme
+import com.mmg.magicfolder.core.util.PriceFormatter.isEuropeanLocale
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -25,6 +29,11 @@ private val KEY_APP_LANGUAGE      = stringPreferencesKey("app_language")
 private val KEY_CARD_LANGUAGE     = stringPreferencesKey("card_language")
 private val KEY_NEWS_LANGUAGES    = stringSetPreferencesKey("news_languages")
 private val KEY_PREFERRED_CURRENCY = stringPreferencesKey("preferred_currency")
+private val LAST_PRICE_REFRESH_KEY = longPreferencesKey("last_price_refresh")
+private val AUTO_REFRESH_KEY       = booleanPreferencesKey("auto_refresh_prices")
+private val AVATAR_URL_KEY         = stringPreferencesKey("avatar_url")
+private val KEY_PLAYER_NAME = stringPreferencesKey("player_name")
+private val KEY_APP_THEME   = stringPreferencesKey("app_theme")
 
 @Singleton
 class UserPreferencesDataStore @Inject constructor(
@@ -38,12 +47,13 @@ class UserPreferencesDataStore @Inject constructor(
                 add("en")
                 if (deviceLang == "es" || deviceLang == "de") add(deviceLang)
             }
-            val defaultCurrency = if (isEuropeanLocale()) "EUR" else "USD"
+            val defaultCurrency =  "EUR"
 
             UserPreferences(
                 appLanguage = AppLanguage.fromCode(
                     prefs[KEY_APP_LANGUAGE]
-                        ?: if (deviceLang in listOf("en", "es", "de")) deviceLang else "en"
+                        ?: "en"
+                        //?: if (deviceLang in listOf("en", "es", "de")) deviceLang else "en"
                 ),
                 cardLanguage = CardLanguage.fromCode(
                     prefs[KEY_CARD_LANGUAGE] ?: "en"
@@ -84,15 +94,64 @@ class UserPreferencesDataStore @Inject constructor(
         appLanguage = AppLanguage.ENGLISH,
         cardLanguage = CardLanguage.ENGLISH,
         newsLanguages = setOf(NewsLanguage.ENGLISH),
-        preferredCurrency = if (isEuropeanLocale()) PreferredCurrency.EUR else PreferredCurrency.USD,
+        preferredCurrency = PreferredCurrency.EUR,
     )
 
-    private fun isEuropeanLocale(): Boolean {
-        val europeanCountries = setOf(
-            "AT","BE","CY","EE","FI","FR","DE","GR","IE","IT","LV","LT","LU","MT","NL",
-            "PT","SK","SI","ES","HR","GB","CH","NO","SE","DK","PL","CZ","HU","RO",
-            "BG","RS","BA","AL","MK","ME","XK","RU","UA","TR"
-        )
-        return Locale.getDefault().country.uppercase() in europeanCountries
+
+    val lastPriceRefreshFlow: Flow<Long?> = context.userPrefsDataStore.data
+        .map { it[LAST_PRICE_REFRESH_KEY] }
+
+    val autoRefreshPricesFlow: Flow<Boolean> = context.userPrefsDataStore.data
+        .map { it[AUTO_REFRESH_KEY] ?: false }
+
+    suspend fun saveLastPriceRefresh(timestamp: Long) {
+        context.userPrefsDataStore.edit { it[LAST_PRICE_REFRESH_KEY] = timestamp }
     }
+
+    suspend fun saveAutoRefreshPrices(enabled: Boolean) {
+        context.userPrefsDataStore.edit { it[AUTO_REFRESH_KEY] = enabled }
+    }
+
+    // ── Avatar URL ────────────────────────────────────────────────────────────
+
+    val avatarUrlFlow: Flow<String?> = context.userPrefsDataStore.data
+        .map { it[AVATAR_URL_KEY] }
+        .catch { emit(null) }
+
+    suspend fun saveAvatarUrl(url: String?) {
+        context.userPrefsDataStore.edit { preferences ->
+            if (url == null)
+                preferences.remove(AVATAR_URL_KEY)
+            else
+                preferences[AVATAR_URL_KEY] = url
+        }
+    }
+    val playerNameFlow: Flow<String> = context.userPrefsDataStore.data
+        .map { prefs -> prefs[KEY_PLAYER_NAME] ?: "Player 1" }
+        .catch { emit("Player 1") }
+
+    val themeFlow: Flow<AppTheme> = context.userPrefsDataStore.data
+        .map { prefs ->
+            when (prefs[KEY_APP_THEME]) {
+                "MEDIEVAL_GRIMOIRE" -> AppTheme.MedievalGrimoire
+                "ARCANE_COSMOS"     -> AppTheme.ArcaneCosmos
+                else                -> AppTheme.NeonVoid
+            }
+        }
+        .catch { emit(AppTheme.NeonVoid) }
+
+    suspend fun savePlayerName(name: String) {
+        context.userPrefsDataStore.edit { it[KEY_PLAYER_NAME] = name }
+    }
+
+    suspend fun saveTheme(theme: AppTheme) {
+        context.userPrefsDataStore.edit { prefs ->
+            prefs[KEY_APP_THEME] = when (theme) {
+                is AppTheme.NeonVoid         -> "NEON_VOID"
+                is AppTheme.MedievalGrimoire -> "MEDIEVAL_GRIMOIRE"
+                is AppTheme.ArcaneCosmos     -> "ARCANE_COSMOS"
+            }
+        }
+    }
+
 }

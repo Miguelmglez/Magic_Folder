@@ -5,12 +5,42 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,7 +51,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
@@ -73,7 +102,7 @@ fun AvatarPickerSheet(
                         Text(
                             stringResource(R.string.avatar_picker_remove),
                             color = MaterialTheme.magicColors.lifeNegative,
-                            style = MaterialTheme.magicTypography.labelSmall,
+                            style = MaterialTheme.magicTypography.labelMedium,
                         )
                     }
                 }
@@ -103,21 +132,19 @@ fun AvatarPickerSheet(
                             )
                         },
                     )
-                    listOf("W", "U", "B", "R", "G").forEach { color ->
+                    listOf("W", "U", "B", "R", "G", "C").forEach { color ->
                         val isSelected = uiState.selectedColors.contains(color)
+                        val manaColor = viewModel.manaColor(color, MaterialTheme.magicColors)
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
-                                .background(
-                                    if (isSelected)
-                                        MaterialTheme.magicColors.primaryAccent.copy(alpha = 0.2f)
-                                    else Color.Transparent,
-                                )
-                                .border(
-                                    width = if (isSelected) 2.dp else 0.dp,
-                                    color = MaterialTheme.magicColors.primaryAccent,
-                                    shape = CircleShape,
+                                .then(
+                                    if (isSelected) {
+                                        Modifier
+                                            .background(manaColor.copy(alpha = 0.2f))
+                                            .border(2.dp, manaColor, CircleShape)
+                                    } else Modifier
                                 )
                                 .clickable { viewModel.toggleColorFilter(color) },
                             contentAlignment = Alignment.Center,
@@ -167,6 +194,7 @@ fun AvatarPickerSheet(
                         )
                     }
                 }
+
                 uiState.error != null && uiState.artworks.isEmpty() -> {
                     Box(
                         modifier = Modifier
@@ -180,6 +208,7 @@ fun AvatarPickerSheet(
                         )
                     }
                 }
+
                 else -> {
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(3),
@@ -195,8 +224,8 @@ fun AvatarPickerSheet(
                         ) { art ->
                             val isSelected =
                                 art.artCropUrl == uiState.pendingSelection ||
-                                (uiState.pendingSelection == null &&
-                                    art.artCropUrl == uiState.currentAvatarUrl)
+                                        (uiState.pendingSelection == null &&
+                                                art.artCropUrl == uiState.currentAvatarUrl)
 
                             ArtworkTile(
                                 art = art,
@@ -274,12 +303,14 @@ private fun ArtworkTile(
             .fillMaxWidth()
             .aspectRatio(1.25f)
             .clip(RoundedCornerShape(12.dp))
-            .border(
-                width = if (isSelected) 3.dp else 0.dp,
-                color = if (isSelected)
-                    MaterialTheme.magicColors.primaryAccent
-                else Color.Transparent,
-                shape = RoundedCornerShape(12.dp),
+            .then(
+                if (isSelected) {
+                    Modifier.border(
+                        width = 3.dp,
+                        color = MaterialTheme.magicColors.primaryAccent,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                } else Modifier
             )
             .clickable(onClick = onClick),
     ) {
@@ -312,21 +343,6 @@ private fun ArtworkTile(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-        }
-
-        // Selection checkmark
-        if (isSelected) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(6.dp)
-                    .size(22.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.magicColors.primaryAccent),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("✓", color = Color.White, fontSize = 12.sp)
-            }
         }
     }
 }

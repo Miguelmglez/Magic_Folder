@@ -14,17 +14,15 @@ import javax.inject.Inject
 @HiltAndroidApp
 class MagicFolderApp : Application() {
 
-    @Inject lateinit var syncManaSymbols: SyncManaSymbolsUseCase
+    @Inject
+    lateinit var syncManaSymbols: SyncManaSymbolsUseCase
 
     override fun onCreate() {
         super.onCreate()
 
         // Register the SVG decoder so Coil can render Scryfall SVG symbol images.
-        Coil.setImageLoader(
-            ImageLoader.Builder(this)
-                .components { add(SvgDecoder.Factory()) }
-                .build()
-        )
+        Coil.setImageLoader(ImageLoader.Builder(this).components { add(SvgDecoder.Factory()) }
+            .build())
 
         CoroutineScope(Dispatchers.IO).launch {
             runCatching { syncManaSymbols() }

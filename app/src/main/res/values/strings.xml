@@ -365,11 +365,10 @@
     <string name="survey_free_text_hint">Optional notes about this game…</string>
 
     <!-- Avatar picker -->
-    <string name="avatar_picker_title">Choose your Planeswalker</string>
+    <string name="avatar_picker_title">Choose your Avatar</string>
     <string name="avatar_picker_filter_label">Filter by color</string>
     <string name="avatar_picker_confirm">Use this art</string>
     <string name="avatar_picker_remove">Remove photo</string>
-    <string name="avatar_picker_edit_hint">Edit profile photo</string>
 
     <!-- Game setup -->
     <string name="game_setup_you_badge">You</string>
@@ -497,6 +496,7 @@
     <string name="profile_section_collection">Collection</string>
     <string name="profile_win_badge">W</string>
     <string name="profile_loss_badge">L</string>
+    <string name="profile_collection_summary">Collection Summary</string>
 
     <!-- Play styles -->
     <string name="playstyle_aggro">Aggro</string>

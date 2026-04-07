@@ -11,8 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mmg.magicfolder.app.navigation.AppNavGraph
-import com.mmg.magicfolder.core.data.local.LanguagePreference
-import com.mmg.magicfolder.core.domain.model.AppLanguage
+import com.mmg.magicfolder.core.data.local.UserPreferencesDataStore
 import com.mmg.magicfolder.core.domain.repository.UserPreferencesRepository
 import com.mmg.magicfolder.core.ui.theme.AppTheme
 import com.mmg.magicfolder.core.ui.theme.LocalPreferredCurrency
@@ -24,11 +23,14 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    @Inject lateinit var languagePreference: LanguagePreference
-    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject
+    lateinit var userPreferencesDataStore: UserPreferencesDataStore
+
+    @Inject
+    lateinit var userPreferencesRepository: UserPreferencesRepository
 
     override fun attachBaseContext(newBase: Context) {
-        val langCode = newBase
+        /*val langCode = newBase
             .getSharedPreferences("user_prefs_lang_sync", Context.MODE_PRIVATE)
             .getString("app_language_sync", "")
             .orEmpty()
@@ -40,7 +42,15 @@ class MainActivity : ComponentActivity() {
             newBase.createConfigurationContext(config)
         } else {
             newBase
-        }
+        }*/
+        // Forzamos el idioma a inglés ("en") ignorando las preferencias por ahora
+        val locale = Locale("en")
+        Locale.setDefault(locale)
+
+        val config = Configuration(newBase.resources.configuration)
+        config.setLocale(locale)
+
+        val context = newBase.createConfigurationContext(config)
         super.attachBaseContext(context)
     }
 
@@ -49,7 +59,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val theme by languagePreference.themeFlow
+            val theme by userPreferencesDataStore.themeFlow
                 .collectAsStateWithLifecycle(initialValue = AppTheme.NeonVoid)
 
             val userPrefs by userPreferencesRepository.preferencesFlow

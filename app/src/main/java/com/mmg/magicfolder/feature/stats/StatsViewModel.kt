@@ -2,7 +2,7 @@ package com.mmg.magicfolder.feature.stats
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mmg.magicfolder.core.data.local.PreferencesDataStore
+import com.mmg.magicfolder.core.data.local.UserPreferencesDataStore
 import com.mmg.magicfolder.core.domain.usecase.collection.RefreshCollectionPricesUseCase
 import com.mmg.magicfolder.core.domain.usecase.stats.GetCollectionStatsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,7 +14,7 @@ import javax.inject.Inject
 class StatsViewModel @Inject constructor(
     private val getStats:            GetCollectionStatsUseCase,
     private val refreshPricesUseCase: RefreshCollectionPricesUseCase,
-    private val preferencesDataStore: PreferencesDataStore,
+    private val userPreferencesDataStore: UserPreferencesDataStore,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(StatsUiState())
@@ -30,8 +30,8 @@ class StatsViewModel @Inject constructor(
         // Load persisted preferences into state
         viewModelScope.launch {
             combine(
-                preferencesDataStore.lastPriceRefreshFlow,
-                preferencesDataStore.autoRefreshPricesFlow,
+                userPreferencesDataStore.lastPriceRefreshFlow,
+                userPreferencesDataStore.autoRefreshPricesFlow,
             ) { lastRefresh, autoRefresh -> lastRefresh to autoRefresh }
                 .collect { (lastRefresh, autoRefresh) ->
                     _uiState.update { it.copy(
@@ -44,8 +44,8 @@ class StatsViewModel @Inject constructor(
         // Auto-refresh if enabled and last refresh was > 24 h ago
         viewModelScope.launch {
             val (autoRefresh, lastRefresh) = combine(
-                preferencesDataStore.autoRefreshPricesFlow,
-                preferencesDataStore.lastPriceRefreshFlow,
+                userPreferencesDataStore.autoRefreshPricesFlow,
+                userPreferencesDataStore.lastPriceRefreshFlow,
             ) { a, b -> a to b }.first()
 
             if (autoRefresh) {
@@ -76,7 +76,7 @@ class StatsViewModel @Inject constructor(
                     }
                     is RefreshCollectionPricesUseCase.Result.Success -> {
                         val now = System.currentTimeMillis()
-                        preferencesDataStore.saveLastPriceRefresh(now)
+                        userPreferencesDataStore.saveLastPriceRefresh(now)
                         val message = buildString {
                             append("Updated ${result.updatedCount} prices")
                             if (result.notFoundCount > 0)
@@ -107,7 +107,7 @@ class StatsViewModel @Inject constructor(
 
     fun onAutoRefreshChanged(enabled: Boolean) {
         viewModelScope.launch {
-            preferencesDataStore.saveAutoRefreshPrices(enabled)
+            userPreferencesDataStore.saveAutoRefreshPrices(enabled)
             _uiState.update { it.copy(autoRefreshPrices = enabled) }
         }
     }
