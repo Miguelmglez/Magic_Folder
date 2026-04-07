@@ -7,13 +7,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -22,8 +17,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -34,8 +27,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.mmg.magicfolder.core.ui.components.MagicBottomBar
-import com.mmg.magicfolder.core.ui.theme.magicColors
-import com.mmg.magicfolder.core.ui.theme.magicTypography
 import com.mmg.magicfolder.feature.addcard.AddCardScreen
 import com.mmg.magicfolder.feature.carddetail.CardDetailScreen
 import com.mmg.magicfolder.feature.collection.CollectionScreen
@@ -211,7 +202,6 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                             )
                         )
                     },
-                    onSettingsClick = { navController.navigate(Screen.Settings.route) },
                 )
             }
 
@@ -264,7 +254,9 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
 
             // ── Profile ───────────────────────────────────────────────────────
             composable(Screen.Profile.route) {
-                ProfileScreen()
+                ProfileScreen(
+                    onSettingsClick = { navController.navigate(Screen.Settings.route) },
+                    )
             }
 
             // ── Tournament flow ────────────────────────────────────────────────

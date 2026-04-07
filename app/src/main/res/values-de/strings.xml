@@ -333,7 +333,7 @@
     <string name="survey_free_text_hint">Optionale Notizen zum Spiel…</string>
 
     <!-- Avatar picker -->
-    <string name="avatar_picker_title">Wähle deinen Planeswalker</string>
+    <string name="avatar_picker_title">Wähle deinen Avatar</string>
     <string name="avatar_picker_filter_label">Nach Farbe filtern</string>
     <string name="avatar_picker_confirm">Dieses Bild verwenden</string>
     <string name="avatar_picker_remove">Foto entfernen</string>
@@ -461,6 +461,7 @@
     <string name="profile_section_collection">Sammlung</string>
     <string name="profile_win_badge">S</string>
     <string name="profile_loss_badge">N</string>
+    <string name="profile_collection_summary">Collection Summary</string>
 
     <!-- Play styles -->
     <string name="playstyle_aggro">Aggro</string>

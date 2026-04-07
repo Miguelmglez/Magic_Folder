@@ -2,8 +2,9 @@ package com.mmg.magicfolder.feature.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mmg.magicfolder.core.data.local.PreferencesDataStore
+import com.mmg.magicfolder.core.data.local.UserPreferencesDataStore
 import com.mmg.magicfolder.core.data.remote.ScryfallRemoteDataSource
+import com.mmg.magicfolder.core.ui.theme.MagicColors
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +17,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AvatarPickerViewModel @Inject constructor(
     private val scryfallRemoteDataSource: ScryfallRemoteDataSource,
-    private val preferencesDataStore: PreferencesDataStore,
+    private val userPreferencesDataStore: UserPreferencesDataStore,
 ) : ViewModel() {
 
     data class PlaneswalkerArt(
@@ -41,7 +42,7 @@ class AvatarPickerViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val savedUrl = preferencesDataStore.avatarUrlFlow.first()
+            val savedUrl = userPreferencesDataStore.avatarUrlFlow.first()
             _uiState.update { it.copy(currentAvatarUrl = savedUrl) }
         }
         loadPlaneswalkers()
@@ -110,7 +111,7 @@ class AvatarPickerViewModel @Inject constructor(
     fun confirmSelection() {
         val url = _uiState.value.pendingSelection ?: return
         viewModelScope.launch {
-            preferencesDataStore.saveAvatarUrl(url)
+            userPreferencesDataStore.saveAvatarUrl(url)
             _uiState.update { it.copy(currentAvatarUrl = url, pendingSelection = null) }
         }
     }
@@ -121,8 +122,22 @@ class AvatarPickerViewModel @Inject constructor(
 
     fun removeAvatar() {
         viewModelScope.launch {
-            preferencesDataStore.saveAvatarUrl(null)
+            userPreferencesDataStore.saveAvatarUrl(null)
             _uiState.update { it.copy(currentAvatarUrl = null) }
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+//  Display name / mana color extensions
+// ─────────────────────────────────────────────────────────────────────────────
+
+    fun manaColor(mc: String, magicColors: MagicColors) = when (mc) {
+        "W" -> magicColors.manaW
+        "U" -> magicColors.manaU
+        "B" -> magicColors.manaB
+        "R" -> magicColors.manaR
+        "G" -> magicColors.manaG
+        "C" -> magicColors.manaC
+        else -> magicColors.primaryAccent
     }
 }

@@ -194,7 +194,7 @@ private fun GamePlayContent(
             .background(mc.background),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            GameTopBar(
+            /*GameTopBar(
                 mode = uiState.mode,
                 turnNumber = uiState.turnNumber,
                 activePlayer = uiState.players.find { it.id == uiState.activePlayerId },
@@ -202,7 +202,7 @@ private fun GamePlayContent(
                 onExit = { showExitDialog = true },
                 onLayoutEdit = { onLayoutEdit(true) },
                 onTournamentClick = onTournamentClick,
-            )
+            )*/
             Box(modifier = Modifier.weight(1f)) {
                 GamePlayerGrid(
                     players = uiState.players,
@@ -381,14 +381,12 @@ private fun GameTopBar(
                 ModeBadge(mode)
                 if (activePlayer != null) {
                     val theme = activePlayer.theme
-                    theme.let {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(it.accent)
-                        )
-                    }
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(theme.accent)
+                    )
                     Text(
                         "T$turnNumber",
                         style = MaterialTheme.magicTypography.labelSmall,

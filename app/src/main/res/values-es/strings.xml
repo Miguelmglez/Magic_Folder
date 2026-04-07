@@ -332,7 +332,7 @@
     <string name="survey_free_text_hint">Notas opcionales sobre la partida…</string>
 
     <!-- Avatar picker -->
-    <string name="avatar_picker_title">Elige tu Planeswalker</string>
+    <string name="avatar_picker_title">Elige tu Avatar</string>
     <string name="avatar_picker_filter_label">Filtrar por color</string>
     <string name="avatar_picker_confirm">Usar este arte</string>
     <string name="avatar_picker_remove">Quitar foto</string>
@@ -460,6 +460,7 @@
     <string name="profile_section_collection">Colección</string>
     <string name="profile_win_badge">V</string>
     <string name="profile_loss_badge">D</string>
+    <string name="profile_collection_summary">Resumen de tu colección</string>
 
     <!-- Play styles -->
     <string name="playstyle_aggro">Aggro</string>
