@@ -41,6 +41,7 @@ import coil.decode.SvgDecoder
 import coil.request.ImageRequest
 import com.mmg.magicfolder.R
 import com.mmg.magicfolder.core.domain.model.Card
+import com.mmg.magicfolder.core.ui.components.MagicSegmentedControl
 import com.mmg.magicfolder.core.ui.components.ManaCostImages
 import com.mmg.magicfolder.core.ui.components.ManaSymbolImage
 import com.mmg.magicfolder.core.ui.theme.MagicColors
@@ -454,35 +455,16 @@ private fun CardsTab(
     val colors = MaterialTheme.magicColors
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Segmented button – visually different from the main TabRow
-        SingleChoiceSegmentedButtonRow(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        ) {
-            SegmentedButton(
-                selected = state.selectedCardsSubTab == 0,
-                onClick = { viewModel.onCardsSubTabSelected(0) },
-                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                label = { Text(stringResource(R.string.draft_cards_all)) },
-                colors = SegmentedButtonDefaults.colors(
-                    activeContainerColor = colors.primaryAccent.copy(alpha = 0.15f),
-                    activeContentColor = colors.primaryAccent,
-                    inactiveContentColor = colors.textDisabled,
-                    inactiveBorderColor = colors.surfaceVariant,
-                ),
-            )
-            SegmentedButton(
-                selected = state.selectedCardsSubTab == 1,
-                onClick = { viewModel.onCardsSubTabSelected(1) },
-                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                label = { Text(stringResource(R.string.draft_tab_tier_list)) },
-                colors = SegmentedButtonDefaults.colors(
-                    activeContainerColor = colors.primaryAccent.copy(alpha = 0.15f),
-                    activeContentColor = colors.primaryAccent,
-                    inactiveContentColor = colors.textDisabled,
-                    inactiveBorderColor = colors.surfaceVariant,
-                ),
-            )
-        }
+        // Modern segmented control for sub-tabs
+        MagicSegmentedControl(
+            options = listOf(
+                stringResource(R.string.draft_cards_all),
+                stringResource(R.string.draft_tab_tier_list)
+            ),
+            selectedIndex = state.selectedCardsSubTab,
+            onOptionSelected = { viewModel.onCardsSubTabSelected(it) },
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
 
         when (state.selectedCardsSubTab) {
             0 -> AllCardsSubTab(state, viewModel)

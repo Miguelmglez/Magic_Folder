@@ -2,7 +2,7 @@ package com.mmg.magicfolder.feature.game
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mmg.magicfolder.core.data.local.LanguagePreference
+import com.mmg.magicfolder.core.data.local.UserPreferencesDataStore
 import com.mmg.magicfolder.core.ui.theme.PlayerTheme
 import com.mmg.magicfolder.core.ui.theme.PlayerThemeColors
 import com.mmg.magicfolder.feature.game.model.GameMode
@@ -45,7 +45,7 @@ data class GameSetupUiState(
 
 @HiltViewModel
 class GameSetupViewModel @Inject constructor(
-    private val languagePreference: LanguagePreference,
+    private val userPreferencesDataStore: UserPreferencesDataStore,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(buildInitialState(GameMode.STANDARD, 2))
@@ -53,7 +53,7 @@ class GameSetupViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val profileName = languagePreference.playerNameFlow.first()
+            val profileName = userPreferencesDataStore.playerNameFlow.first()
             val isDefault   = profileName.isBlank() || profileName in DEFAULT_NAMES
             _uiState.update { state ->
                 val configs = state.playerConfigs.toMutableList()

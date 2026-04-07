@@ -1,6 +1,5 @@
 package com.mmg.magicfolder.feature.profile
 
-import android.app.Activity
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,24 +9,26 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -40,15 +41,10 @@ import com.mmg.magicfolder.R
 import com.mmg.magicfolder.core.data.local.dao.DeckStatsRow
 import com.mmg.magicfolder.core.data.local.entity.GameSessionWithPlayers
 import com.mmg.magicfolder.core.domain.model.Achievement
-import com.mmg.magicfolder.core.domain.model.AppLanguage
-import com.mmg.magicfolder.core.domain.model.CardLanguage
 import com.mmg.magicfolder.core.domain.model.CollectionStats
-import com.mmg.magicfolder.core.domain.model.NewsLanguage
 import com.mmg.magicfolder.core.domain.model.PreferredCurrency
-import com.mmg.magicfolder.core.domain.model.UserPreferences
 import com.mmg.magicfolder.core.ui.components.ManaColor
 import com.mmg.magicfolder.core.ui.components.ManaSymbol
-import com.mmg.magicfolder.core.ui.theme.AppTheme
 import com.mmg.magicfolder.core.ui.theme.MarcellusFontFamily
 import com.mmg.magicfolder.core.ui.theme.ThemeBackground
 import com.mmg.magicfolder.core.ui.theme.magicColors
@@ -60,17 +56,12 @@ import kotlin.math.roundToInt
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
+    onSettingsClick: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val prefsState by viewModel.prefsState.collectAsStateWithLifecycle()
     val mc = MaterialTheme.magicColors
-    val activity = LocalContext.current as? Activity
     var showAvatarPicker by remember { mutableStateOf(false) }
-
     // Recreate activity when app language changes
-    LaunchedEffect(Unit) {
-        viewModel.appLanguageChanged.collect { activity?.recreate() }
-    }
 
     if (showAvatarPicker) {
         AvatarPickerSheet(onDismiss = { showAvatarPicker = false })
@@ -107,9 +98,10 @@ fun ProfileScreen(
             item {
                 ProfileHeroSection(
                     name          = uiState.playerName,
-                    playStyle     = "${uiState.playStyle.icon} ${uiState.playStyle.label}",
                     avatarUrl     = uiState.avatarUrl,
                     onAvatarClick = { showAvatarPicker = true },
+                    onSettingsClick = onSettingsClick,
+                    savePlayerName     = viewModel::savePlayerName,
                 )
             }
 
@@ -176,28 +168,9 @@ fun ProfileScreen(
                     CollectionSummarySection(
                         stats    = stats,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        viewModel = viewModel
                     )
                 }
-            }
-
-            // ── Preferences ───────────────────────────────────────────────────
-            item {
-                PreferencesSection(
-                    prefs             = prefsState.userPreferences,
-                    onAppLanguage     = viewModel::setAppLanguage,
-                    onCardLanguage    = viewModel::setCardLanguage,
-                    onNewsLanguages   = viewModel::setNewsLanguages,
-                    onCurrency        = viewModel::setPreferredCurrency,
-                    modifier          = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                )
-            }
-
-            // ── Theme selector ────────────────────────────────────────────────
-            item {
-                ThemeSelectorSection(
-                    currentTheme     = uiState.currentTheme,
-                    onThemeSelected  = viewModel::selectTheme,
-                )
             }
 
             // ── Footer ────────────────────────────────────────────────────────
@@ -213,16 +186,20 @@ fun ProfileScreen(
 @Composable
 private fun ProfileHeroSection(
     name: String,
-    playStyle: String?,
     avatarUrl: String?,
     onAvatarClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+    savePlayerName: (String) -> Unit
 ) {
     val mc = MaterialTheme.magicColors
-
+    var localName by remember(name) { mutableStateOf(name) }
+    val focusManager = LocalFocusManager.current
     Box(
         modifier = Modifier
+            .padding(horizontal = 8.dp, vertical = 8.dp)
             .fillMaxWidth()
-            .height(250.dp),
+            .height(256.dp)
+            .clip(RoundedCornerShape(16.dp)),
     ) {
         // Background: planeswalker art or fallback gradient
         if (avatarUrl != null) {
@@ -233,12 +210,13 @@ private fun ProfileHeroSection(
                     .build(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().clickable{onAvatarClick()},
             )
         } else {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .clickable{onAvatarClick()}
                     .background(
                         brush = Brush.radialGradient(
                             colors = listOf(
@@ -284,14 +262,14 @@ private fun ProfileHeroSection(
                 .size(36.dp)
                 .clip(CircleShape)
                 .background(Color.Black.copy(alpha = 0.5f))
-                .clickable(onClick = onAvatarClick),
+                .clickable(onClick = onSettingsClick),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector = Icons.Default.Edit,
-                contentDescription = stringResource(R.string.avatar_picker_edit_hint),
+                imageVector = Icons.Default.Settings,
+                contentDescription = "Settings",
                 tint = Color.White.copy(alpha = 0.85f),
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(24.dp).clickable(onClick = onSettingsClick),
             )
         }
 
@@ -299,33 +277,53 @@ private fun ProfileHeroSection(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+                .padding(start = 8.dp, end = 8.dp, bottom = 8.dp, top = 0.dp)
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Text(
-                text = name.ifBlank { stringResource(R.string.game_setup_default_player_name) },
-                fontFamily = MarcellusFontFamily,
-                fontWeight = FontWeight.Bold,
-                fontSize = 26.sp,
-                color = Color.White,
-                letterSpacing = 1.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            /*if (playStyle != null) {
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = mc.primaryAccent.copy(alpha = 0.25f),
-                    border = BorderStroke(0.5.dp, mc.primaryAccent.copy(alpha = 0.5f)),
-                ) {
-                    Text(
-                        text = playStyle,
-                        style = MaterialTheme.magicTypography.labelSmall,
-                        color = mc.primaryAccent,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
-                    )
+            BasicTextField(
+                value = localName,
+                onValueChange = { newName ->
+                    localName = newName
+                    // Aquí se actualiza el nombre del usuario
+                    savePlayerName(newName)
+                },
+                // Aplicamos el mismo estilo que tenías en el Text
+                textStyle = TextStyle(
+                    fontFamily = MarcellusFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 26.sp,
+                    color = Color.White,
+                    letterSpacing = 1.sp
+                ),
+                cursorBrush = SolidColor(Color.White), // Color de la rayita al escribir
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Done // Cambia la tecla 'Enter' por 'Hecho/Ok'
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        focusManager.clearFocus() // <--- 3. QUITA EL FOCO Y EL CURSOR
+                        // Aquí podrías añadir lógica extra como guardar en DB si quieres
+                    }
+                ),
+                decorationBox = { innerTextField ->
+                    // Esto maneja el "placeholder" (el texto por defecto cuando está vacío)
+                    if (name.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.game_setup_default_player_name),
+                            style = TextStyle(
+                                fontFamily = MarcellusFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 26.sp,
+                                color = Color.White.copy(alpha = 0.5f), // Más transparente
+                                letterSpacing = 1.sp
+                            )
+                        )
+                    }
+                    innerTextField()
                 }
-            }*/
+            )
         }
     }
 }
@@ -340,7 +338,7 @@ private fun ProfileKpiSection(
     modifier:          Modifier = Modifier,
 ) {
     Column(
-        modifier            = modifier,
+        modifier            = modifier.padding(top = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         SectionTitle("Game Stats")
@@ -817,15 +815,19 @@ private fun RecentGameRow(
 
 @Composable
 private fun CollectionSummarySection(
-    stats:    CollectionStats,
+    stats: CollectionStats,
     modifier: Modifier = Modifier,
+    viewModel: ProfileViewModel,
 ) {
     val mc = MaterialTheme.magicColors
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val currency = uiState.preferredCurrency
+
     Column(
         modifier            = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        SectionTitle("Collection Summary")
+        SectionTitle(stringResource(R.string.profile_collection_summary))
         Surface(shape = RoundedCornerShape(14.dp), color = mc.surface) {
             Row(
                 modifier              = Modifier.fillMaxWidth().padding(14.dp),
@@ -837,172 +839,14 @@ private fun CollectionSummarySection(
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text("Est. Value", style = MaterialTheme.magicTypography.labelSmall, color = mc.textSecondary)
-                    Text("$${String.format("%.2f", stats.totalValueUsd)}", style = MaterialTheme.magicTypography.titleMedium, color = mc.goldMtg)
+                    val displayValue = if (currency == PreferredCurrency.EUR) stats.totalValueEur else stats.totalValueUsd
+                    Text(if (currency == PreferredCurrency.EUR) "${String.format("%.2f", displayValue)}${currency.symbol}" else "${currency.symbol}${String.format("%.2f", displayValue)}", style = MaterialTheme.magicTypography.titleMedium, color = mc.goldMtg)
                 }
             }
         }
     }
 }
 
-// ── Preferences section ───────────────────────────────────────────────────────
-
-@Composable
-private fun PreferencesSection(
-    prefs:           UserPreferences,
-    onAppLanguage:   (AppLanguage) -> Unit,
-    onCardLanguage:  (CardLanguage) -> Unit,
-    onNewsLanguages: (Set<NewsLanguage>) -> Unit,
-    onCurrency:      (PreferredCurrency) -> Unit,
-    modifier:        Modifier = Modifier,
-) {
-    val mc = MaterialTheme.magicColors
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionTitle(stringResource(R.string.preferences_title))
-        Surface(shape = RoundedCornerShape(14.dp), color = mc.surface) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                // App Language — single-select dropdown
-                PreferenceDropdownRow(
-                    label    = stringResource(R.string.pref_app_language),
-                    selected = prefs.appLanguage.displayName,
-                    options  = AppLanguage.entries.map { it.displayName },
-                    onSelect = { idx -> onAppLanguage(AppLanguage.entries[idx]) },
-                )
-                HorizontalDivider(color = mc.surfaceVariant.copy(alpha = 0.5f))
-
-                // Card Language — single-select dropdown
-                PreferenceDropdownRow(
-                    label    = stringResource(R.string.pref_card_language),
-                    selected = prefs.cardLanguage.displayName,
-                    options  = CardLanguage.entries.map { it.displayName },
-                    onSelect = { idx -> onCardLanguage(CardLanguage.entries[idx]) },
-                )
-                HorizontalDivider(color = mc.surfaceVariant.copy(alpha = 0.5f))
-
-                // News Language — multi-select checkboxes
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        stringResource(R.string.pref_news_language),
-                        style = MaterialTheme.magicTypography.bodySmall,
-                        color = mc.textSecondary,
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        NewsLanguage.entries.forEach { lang ->
-                            val checked = lang in prefs.newsLanguages
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.clickable {
-                                    val updated = if (checked) {
-                                        prefs.newsLanguages - lang
-                                    } else {
-                                        prefs.newsLanguages + lang
-                                    }
-                                    if (updated.isNotEmpty()) onNewsLanguages(updated)
-                                },
-                            ) {
-                                Checkbox(
-                                    checked = checked,
-                                    onCheckedChange = null,
-                                    colors = CheckboxDefaults.colors(
-                                        checkedColor = mc.primaryAccent,
-                                        uncheckedColor = mc.textDisabled,
-                                    ),
-                                )
-                                Text(
-                                    text = lang.displayName,
-                                    style = MaterialTheme.magicTypography.bodySmall,
-                                    color = if (checked) mc.textPrimary else mc.textSecondary,
-                                )
-                            }
-                        }
-                    }
-                }
-                HorizontalDivider(color = mc.surfaceVariant.copy(alpha = 0.5f))
-
-                // Currency — radio buttons
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        stringResource(R.string.pref_currency),
-                        style = MaterialTheme.magicTypography.bodySmall,
-                        color = mc.textSecondary,
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        PreferredCurrency.entries.forEach { currency ->
-                            val selected = currency == prefs.preferredCurrency
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.clickable { onCurrency(currency) },
-                            ) {
-                                RadioButton(
-                                    selected = selected,
-                                    onClick  = null,
-                                    colors   = RadioButtonDefaults.colors(
-                                        selectedColor   = mc.primaryAccent,
-                                        unselectedColor = mc.textDisabled,
-                                    ),
-                                )
-                                Text(
-                                    text  = currency.displayName,
-                                    style = MaterialTheme.magicTypography.bodySmall,
-                                    color = if (selected) mc.textPrimary else mc.textSecondary,
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PreferenceDropdownRow(
-    label:    String,
-    selected: String,
-    options:  List<String>,
-    onSelect: (Int) -> Unit,
-) {
-    val mc = MaterialTheme.magicColors
-    var expanded by remember { mutableStateOf(false) }
-
-    Row(
-        modifier              = Modifier.fillMaxWidth(),
-        verticalAlignment     = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(label, style = MaterialTheme.magicTypography.bodySmall, color = mc.textSecondary)
-        Box {
-            Surface(
-                onClick = { expanded = true },
-                shape   = RoundedCornerShape(8.dp),
-                color   = mc.surfaceVariant,
-            ) {
-                Text(
-                    text     = selected,
-                    style    = MaterialTheme.magicTypography.bodySmall,
-                    color    = mc.primaryAccent,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                )
-            }
-            DropdownMenu(
-                expanded         = expanded,
-                onDismissRequest = { expanded = false },
-            ) {
-                options.forEachIndexed { idx, option ->
-                    DropdownMenuItem(
-                        text    = { Text(option) },
-                        onClick = {
-                            onSelect(idx)
-                            expanded = false
-                        },
-                    )
-                }
-            }
-        }
-    }
-}
 
 // ── Sections ──────────────────────────────────────────────────────────────────
 
@@ -1016,112 +860,6 @@ private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
     )
 }
 
-@Composable
-private fun ThemeSelectorSection(
-    currentTheme:    AppTheme,
-    onThemeSelected: (AppTheme) -> Unit,
-) {
-    Column(
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        SectionTitle(stringResource(R.string.profile_section_themes))
-        Row(
-            modifier              = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            ThemeTile(
-                name          = "Neon Void",
-                emoji         = "⚡",
-                previewColors = listOf(Color(0xFF030508), Color(0xFFC77DFF), Color(0xFF4CC9F0)),
-                isSelected    = currentTheme is AppTheme.NeonVoid,
-                onClick       = { onThemeSelected(AppTheme.NeonVoid) },
-                modifier      = Modifier.weight(1f),
-            )
-            ThemeTile(
-                name          = "Grimoire",
-                emoji         = "📜",
-                previewColors = listOf(Color(0xFF1A1208), Color(0xFFC9A84C), Color(0xFF7AB648)),
-                isSelected    = currentTheme is AppTheme.MedievalGrimoire,
-                onClick       = { onThemeSelected(AppTheme.MedievalGrimoire) },
-                modifier      = Modifier.weight(1f),
-            )
-            ThemeTile(
-                name          = "Cosmos",
-                emoji         = "✨",
-                previewColors = listOf(Color(0xFF040812), Color(0xFF7B61FF), Color(0xFFFF61DC)),
-                isSelected    = currentTheme is AppTheme.ArcaneCosmos,
-                onClick       = { onThemeSelected(AppTheme.ArcaneCosmos) },
-                modifier      = Modifier.weight(1f),
-            )
-        }
-    }
-}
-
-@Composable
-private fun ThemeTile(
-    name:          String,
-    emoji:         String,
-    previewColors: List<Color>,
-    isSelected:    Boolean,
-    onClick:       () -> Unit,
-    modifier:      Modifier = Modifier,
-) {
-    val mc = MaterialTheme.magicColors
-    Surface(
-        onClick = onClick,
-        modifier = modifier,
-        shape    = RoundedCornerShape(14.dp),
-        color    = if (isSelected) mc.primaryAccent.copy(0.1f) else mc.surface,
-        border   = BorderStroke(
-            width = if (isSelected) 2.dp else 0.5.dp,
-            color = if (isSelected) mc.primaryAccent else mc.surfaceVariant,
-        ),
-    ) {
-        Column(
-            modifier            = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment     = Alignment.CenterVertically,
-            ) {
-                previewColors.forEachIndexed { index, color ->
-                    Box(
-                        modifier = Modifier
-                            .size(if (index == 0) 28.dp else 18.dp)
-                            .clip(CircleShape)
-                            .background(color)
-                            .then(
-                                if (index == 0)
-                                    Modifier.border(
-                                        1.5.dp,
-                                        previewColors.getOrElse(1) { Color.White }.copy(0.5f),
-                                        CircleShape,
-                                    )
-                                else Modifier
-                            ),
-                    )
-                }
-            }
-            Text(
-                text      = name,
-                style     = MaterialTheme.magicTypography.labelSmall,
-                color     = if (isSelected) mc.primaryAccent else mc.textSecondary,
-                textAlign = TextAlign.Center,
-            )
-            if (isSelected) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(mc.primaryAccent),
-                )
-            }
-        }
-    }
-}
 
 @Composable
 private fun AppInfoFooter(modifier: Modifier = Modifier) {
@@ -1131,7 +869,7 @@ private fun AppInfoFooter(modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text("Magic Folder v1.0.4", style = MaterialTheme.magicTypography.labelSmall, color = mc.textDisabled)
+        Text("ManaHub v1.0.0", style = MaterialTheme.magicTypography.labelSmall, color = mc.textDisabled)
         Text("Developed with ❤️ for the MTG community", style = MaterialTheme.magicTypography.labelSmall, color = mc.textDisabled, textAlign = TextAlign.Center)
     }
 }

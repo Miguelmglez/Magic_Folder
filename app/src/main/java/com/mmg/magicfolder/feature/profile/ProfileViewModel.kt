@@ -2,14 +2,7 @@ package com.mmg.magicfolder.feature.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mmg.magicfolder.core.data.local.LanguagePreference
-import com.mmg.magicfolder.core.data.local.PreferencesDataStore
-import com.mmg.magicfolder.core.domain.model.AppLanguage
-import com.mmg.magicfolder.core.domain.model.CardLanguage
-import com.mmg.magicfolder.core.domain.model.NewsLanguage
-import com.mmg.magicfolder.core.domain.model.PreferredCurrency
-import com.mmg.magicfolder.core.domain.model.UserPreferences
-import com.mmg.magicfolder.core.domain.repository.UserPreferencesRepository
+import com.mmg.magicfolder.core.data.local.UserPreferencesDataStore
 import com.mmg.magicfolder.core.data.local.dao.DeckStatsRow
 import com.mmg.magicfolder.core.data.local.dao.SurveyAnswerDao
 import com.mmg.magicfolder.core.data.local.entity.GameSessionWithPlayers
@@ -21,21 +14,29 @@ import com.mmg.magicfolder.core.domain.repository.GameSessionRepository
 import com.mmg.magicfolder.core.domain.repository.StatsRepository
 import com.mmg.magicfolder.core.domain.usecase.achievements.AchievementStats
 import com.mmg.magicfolder.core.domain.usecase.achievements.CheckAchievementsUseCase
-import com.mmg.magicfolder.core.ui.theme.AppTheme
+import com.mmg.magicfolder.feature.settings.PreferencesState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.math.roundToInt
 
 // ── Enums ─────────────────────────────────────────────────────────────────────
 
 enum class PlayStyle(val label: String, val icon: String) {
-    AGGRO("Aggressor",  "⚔"),
+    AGGRO("Aggressor", "⚔"),
     CONTROL("Strategist", "🛡"),
-    MIDRANGE("Midrange",  "♟"),
-    BALANCED("Balanced",  "⚖"),
+    MIDRANGE("Midrange", "♟"),
+    BALANCED("Balanced", "⚖"),
 }
 
 // ── ViewModel ─────────────────────────────────────────────────────────────────
@@ -43,60 +44,46 @@ enum class PlayStyle(val label: String, val icon: String) {
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val statsRepo:             StatsRepository,
-    private val gameSessionRepo:       GameSessionRepository,
-    private val surveyAnswerDao:       SurveyAnswerDao,
-    private val langPref:              LanguagePreference,
-    private val preferencesDataStore:  PreferencesDataStore,
-    private val userPreferencesRepo:   UserPreferencesRepository,
+    private val statsRepo: StatsRepository,
+    private val gameSessionRepo: GameSessionRepository,
+    private val surveyAnswerDao: SurveyAnswerDao,
     private val checkAchievementsUseCase: CheckAchievementsUseCase,
+    private val userPreferencesDataStore: UserPreferencesDataStore
 ) : ViewModel() {
 
-    private val _appLanguageChanged = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-    val appLanguageChanged: SharedFlow<Unit> = _appLanguageChanged.asSharedFlow()
-
     data class UiState(
-        val playerName:              String     = "Player 1",
-        val currentTheme:            AppTheme   = AppTheme.NeonVoid,
-        val playStyle:               PlayStyle  = PlayStyle.BALANCED,
-        val isLoading:               Boolean    = true,
-        val avatarUrl:               String?    = null,
+        val playerName: String = "Player 1",
+        val playStyle: PlayStyle = PlayStyle.BALANCED,
+        val isLoading: Boolean = true,
+        val avatarUrl: String? = null,
         // Collection
-        val collectionStats:         CollectionStats?           = null,
-        val favouriteColor:          String?                    = null,
-        val mostValuableColor:       String?                    = null,
+        val collectionStats: CollectionStats? = null,
+        val favouriteColor: String? = null,
+        val mostValuableColor: String? = null,
         // Game stats
-        val totalGames:              Int    = 0,
-        val totalWins:               Int    = 0,
-        val avgLifeOnWin:            Double = 0.0,
-        val avgLifeOnLoss:           Double = 0.0,
-        val currentStreak:           Int    = 0,
-        val favoriteMode:            String = "",
-        val avgDurationMs:           Double = 0.0,
+        val totalGames: Int = 0,
+        val totalWins: Int = 0,
+        val avgLifeOnWin: Double = 0.0,
+        val avgLifeOnLoss: Double = 0.0,
+        val currentStreak: Int = 0,
+        val favoriteMode: String = "",
+        val avgDurationMs: Double = 0.0,
         val mostFrequentElimination: String = "",
-        val avgWinTurn:              Double = 0.0,
+        val avgWinTurn: Double = 0.0,
         // Survey insights
-        val surveyCount:             Int    = 0,
-        val manaIssueCount:          Int    = 0,
-        val avgHandRating:           Double = 0.0,
-        val favoriteWinStyle:        String = "",
+        val surveyCount: Int = 0,
+        val manaIssueCount: Int = 0,
+        val avgHandRating: Double = 0.0,
+        val favoriteWinStyle: String = "",
         // Decks + sessions
-        val deckStats:               List<DeckStatsRow>          = emptyList(),
-        val recentSessions:          List<GameSessionWithPlayers> = emptyList(),
+        val deckStats: List<DeckStatsRow> = emptyList(),
+        val recentSessions: List<GameSessionWithPlayers> = emptyList(),
         // Achievements
-        val achievements:            List<Achievement>            = emptyList(),
+        val achievements: List<Achievement> = emptyList(),
+        val preferredCurrency: com.mmg.magicfolder.core.domain.model.PreferredCurrency = com.mmg.magicfolder.core.domain.model.PreferredCurrency.USD,
     ) {
         val winRate: Float get() = if (totalGames > 0) totalWins.toFloat() / totalGames else 0f
     }
-
-    data class PreferencesState(
-        val userPreferences: UserPreferences = UserPreferences(
-            appLanguage = AppLanguage.ENGLISH,
-            cardLanguage = CardLanguage.ENGLISH,
-            newsLanguages = setOf(NewsLanguage.ENGLISH),
-            preferredCurrency = PreferredCurrency.USD,
-        ),
-    )
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
@@ -105,37 +92,29 @@ class ProfileViewModel @Inject constructor(
     val prefsState: StateFlow<PreferencesState> = _prefsState.asStateFlow()
 
     init {
-        // ── User preferences ──────────────────────────────────────────────────
-        userPreferencesRepo.preferencesFlow
-            .onEach { prefs -> _prefsState.update { it.copy(userPreferences = prefs) } }
-            .catch { /* ignore */ }
-            .launchIn(viewModelScope)
-
         // ── Preferences ───────────────────────────────────────────────────────
-        preferencesDataStore.avatarUrlFlow
+        userPreferencesDataStore.avatarUrlFlow
             .onEach { url -> _uiState.update { it.copy(avatarUrl = url) } }
             .catch { /* ignore */ }
             .launchIn(viewModelScope)
 
-        langPref.playerNameFlow
-            .onEach { name -> _uiState.update { it.copy(playerName = name) } }
+        userPreferencesDataStore.preferencesFlow
+            .onEach { prefs ->
+                _uiState.update { it.copy(preferredCurrency = prefs.preferredCurrency) }
+            }
             .catch { /* ignore */ }
             .launchIn(viewModelScope)
 
-        langPref.themeFlow
-            .onEach { theme -> _uiState.update { it.copy(currentTheme = theme) } }
-            .catch { /* ignore */ }
-            .launchIn(viewModelScope)
 
         // ── Collection stats ──────────────────────────────────────────────────
         statsRepo.observeCollectionStats()
             .onEach { stats ->
                 _uiState.update {
                     it.copy(
-                        collectionStats    = stats,
-                        isLoading          = false,
-                        favouriteColor     = stats.computeFavouriteColor(),
-                        mostValuableColor  = stats.computeMostValuableColor(),
+                        collectionStats = stats,
+                        isLoading = false,
+                        favouriteColor = stats.computeFavouriteColor(),
+                        mostValuableColor = stats.computeMostValuableColor(),
                     )
                 }
             }
@@ -148,7 +127,12 @@ class ProfileViewModel @Inject constructor(
             .catch { /* ignore */ }
             .launchIn(viewModelScope)
 
-        langPref.playerNameFlow
+        userPreferencesDataStore.playerNameFlow
+            .onEach { name -> _uiState.update { it.copy(playerName = name) } }
+            .catch { /* ignore */ }
+            .launchIn(viewModelScope)
+
+        userPreferencesDataStore.playerNameFlow
             .flatMapLatest { name -> gameSessionRepo.observeWins(name) }
             .onEach { wins -> _uiState.update { it.copy(totalWins = wins) } }
             .catch { /* ignore */ }
@@ -164,7 +148,7 @@ class ProfileViewModel @Inject constructor(
             .catch { /* ignore */ }
             .launchIn(viewModelScope)
 
-        langPref.playerNameFlow
+        userPreferencesDataStore.playerNameFlow
             .flatMapLatest { name -> gameSessionRepo.observeCurrentStreak(name) }
             .onEach { streak -> _uiState.update { it.copy(currentStreak = streak) } }
             .catch { /* ignore */ }
@@ -181,11 +165,17 @@ class ProfileViewModel @Inject constructor(
             .launchIn(viewModelScope)
 
         gameSessionRepo.observeMostFrequentElimination()
-            .onEach { ec -> _uiState.update { it.copy(mostFrequentElimination = ec?.eliminationReason ?: "") } }
+            .onEach { ec ->
+                _uiState.update {
+                    it.copy(
+                        mostFrequentElimination = ec?.eliminationReason ?: ""
+                    )
+                }
+            }
             .catch { /* ignore */ }
             .launchIn(viewModelScope)
 
-        langPref.playerNameFlow
+        userPreferencesDataStore.playerNameFlow
             .flatMapLatest { name -> gameSessionRepo.observeAvgWinTurn(name) }
             .onEach { v -> _uiState.update { it.copy(avgWinTurn = v ?: 0.0) } }
             .catch { /* ignore */ }
@@ -245,42 +235,18 @@ class ProfileViewModel @Inject constructor(
 
     fun savePlayerName(name: String) {
         if (name.isBlank()) return
-        viewModelScope.launch { langPref.savePlayerName(name.trim()) }
+        viewModelScope.launch { userPreferencesDataStore.savePlayerName(name.trim()) }
+        _uiState.update { it.copy(playerName = name) }
     }
 
-    fun selectTheme(theme: AppTheme) {
-        viewModelScope.launch {
-            langPref.saveTheme(theme)
-        }
-    }
-
-    fun setAppLanguage(language: AppLanguage) {
-        viewModelScope.launch {
-            userPreferencesRepo.setAppLanguage(language)
-            _appLanguageChanged.emit(Unit)
-        }
-    }
-
-    fun setCardLanguage(language: CardLanguage) {
-        viewModelScope.launch { userPreferencesRepo.setCardLanguage(language) }
-    }
-
-    fun setNewsLanguages(languages: Set<NewsLanguage>) {
-        if (languages.isEmpty()) return
-        viewModelScope.launch { userPreferencesRepo.setNewsLanguages(languages) }
-    }
-
-    fun setPreferredCurrency(currency: PreferredCurrency) {
-        viewModelScope.launch { userPreferencesRepo.setPreferredCurrency(currency) }
-    }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private fun detectPlayStyle(avgWinTurn: Double, favoriteElim: String): PlayStyle = when {
-        avgWinTurn in 1.0..7.0             -> PlayStyle.AGGRO
+        avgWinTurn in 1.0..7.0 -> PlayStyle.AGGRO
         favoriteElim == "COMMANDER_DAMAGE" -> PlayStyle.MIDRANGE
-        avgWinTurn > 12.0                  -> PlayStyle.CONTROL
-        else                               -> PlayStyle.BALANCED
+        avgWinTurn > 12.0 -> PlayStyle.CONTROL
+        else -> PlayStyle.BALANCED
     }
 
     private fun CollectionStats.computeFavouriteColor(): String? =
@@ -297,26 +263,26 @@ class ProfileViewModel @Inject constructor(
             .map { it.trim().removeSurrounding("\"") }.filter { it.isNotEmpty() }
         return when {
             parsed.isEmpty() -> "C"
-            parsed.size > 1  -> "M"
-            else             -> parsed.first()
+            parsed.size > 1 -> "M"
+            else -> parsed.first()
         }
     }
 
     private fun buildAchievementStats(s: UiState): AchievementStats {
         val byRarity = s.collectionStats?.byRarity ?: emptyMap()
-        val byColor  = s.collectionStats?.byColor  ?: emptyMap()
+        val byColor = s.collectionStats?.byColor ?: emptyMap()
         return AchievementStats(
-            totalGames          = s.totalGames,
-            totalWins           = s.totalWins,
-            winStreak           = s.currentStreak,
-            totalCards          = s.collectionStats?.totalCards ?: 0,
-            hasMythic           = (byRarity[Rarity.MYTHIC] ?: 0) > 0,
-            deckCount           = s.collectionStats?.totalDecks ?: 0,
-            surveyCount         = s.surveyCount,
-            maxCardValue        = s.collectionStats?.mostValuableCards?.firstOrNull()?.priceUsd ?: 0.0,
-            avgWinTurn          = s.avgWinTurn,
+            totalGames = s.totalGames,
+            totalWins = s.totalWins,
+            winStreak = s.currentStreak,
+            totalCards = s.collectionStats?.totalCards ?: 0,
+            hasMythic = (byRarity[Rarity.MYTHIC] ?: 0) > 0,
+            deckCount = s.collectionStats?.totalDecks ?: 0,
+            surveyCount = s.surveyCount,
+            maxCardValue = s.collectionStats?.mostValuableCards?.firstOrNull()?.priceUsd ?: 0.0,
+            avgWinTurn = s.avgWinTurn,
             favoriteElimination = s.mostFrequentElimination,
-            distinctColorCount  = byColor.entries.count { (color) ->
+            distinctColorCount = byColor.entries.count { (color) ->
                 color != MtgColor.COLORLESS
             },
         )
