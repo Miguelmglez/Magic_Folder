@@ -8,6 +8,7 @@ import com.mmg.magicfolder.core.domain.model.BasicLandDistribution
 import com.mmg.magicfolder.core.domain.model.BuilderStep
 import com.mmg.magicfolder.core.domain.model.BuilderTab
 import com.mmg.magicfolder.core.domain.model.Card
+import com.mmg.magicfolder.core.domain.model.CardLanguage
 import com.mmg.magicfolder.core.domain.model.Deck
 import com.mmg.magicfolder.core.domain.model.DeckBuilderState
 import com.mmg.magicfolder.core.domain.model.DeckCard
@@ -20,10 +21,12 @@ import com.mmg.magicfolder.core.domain.usecase.decks.BasicLandCalculator
 import com.mmg.magicfolder.core.network.ScryfallRequestQueue
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -40,15 +43,12 @@ class DeckBuilderViewModel @Inject constructor(
     private val _state = MutableStateFlow(DeckBuilderState())
     val state: StateFlow<DeckBuilderState> = _state.asStateFlow()
 
-    private var preferredCurrency: PreferredCurrency = PreferredCurrency.USD
-
-    init {
-        viewModelScope.launch {
-            userPreferencesDataStore.preferredCurrencyFlow.collectLatest { currency ->
-                preferredCurrency = currency
-            }
-        }
-    }
+    val preferredCurrency: StateFlow<PreferredCurrency> = userPreferencesDataStore.preferredCurrencyFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferredCurrency.EUR
+        )
 
     // Commander search state (separate from main state)
     private val _commanderResults = MutableStateFlow<List<Card>>(emptyList())
@@ -109,7 +109,8 @@ class DeckBuilderViewModel @Inject constructor(
             _state.update { it.copy(isLoadingSuggestions = true) }
             try {
                 val s = _state.value
-                val query = buildSuggestionQuery(s)
+                val prefs = userPreferencesDataStore.preferencesFlow.first()
+                val query = buildSuggestionQuery(s, prefs.cardLanguage)
                 val results = requestQueue.execute {
                     scryfallDataSource.searchWithRawQuery(query)
                 }
@@ -133,13 +134,15 @@ class DeckBuilderViewModel @Inject constructor(
         }
     }
 
-    private fun buildSuggestionQuery(s: DeckBuilderState): String = buildString {
+    private fun buildSuggestionQuery(s: DeckBuilderState, lang: CardLanguage): String = buildString {
         append("f:${s.format.name.lowercase()}")
         if (s.format.requiresCommander && s.commanderColorIdentity.isNotEmpty()) {
             val colors = s.commanderColorIdentity.joinToString("") { it.lowercase() }
             append(" id:$colors")
         }
         append(" -t:land")
+        // Filtrar por el idioma preferido de las cartas
+        append(" lang:${lang.code.split("-")[0]}")
         append(" order:edhrec")
     }
 
@@ -351,7 +354,7 @@ class DeckBuilderViewModel @Inject constructor(
         _state.update { it.copy(step = BuilderStep.BUILDING) }
     }
 
-    fun getFilteredCards(cards: List<DeckCard>): List<DeckCard> {
+    fun getFilteredCards(cards: List<DeckCard>, currency: PreferredCurrency): List<DeckCard> {
         val s = _state.value
         return cards.filter { dc ->
             val card = dc.card
@@ -361,7 +364,7 @@ class DeckBuilderViewModel @Inject constructor(
                 card.typeLine.contains(s.filterType, ignoreCase = true)
             val matchesCmc = s.filterMaxCmc == null || card.cmc.toInt() <= s.filterMaxCmc!!
 
-            val cardPrice = if (preferredCurrency == PreferredCurrency.EUR) {
+            val cardPrice = if (currency == PreferredCurrency.EUR) {
                 card.priceEur ?: card.priceEurFoil
             } else {
                 card.priceUsd ?: card.priceUsdFoil
