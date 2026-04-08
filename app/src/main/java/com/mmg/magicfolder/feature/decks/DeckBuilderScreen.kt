@@ -31,6 +31,7 @@ import com.mmg.magicfolder.core.domain.model.Card
 import com.mmg.magicfolder.core.domain.model.DeckBuilderState
 import com.mmg.magicfolder.core.domain.model.DeckCard
 import com.mmg.magicfolder.core.domain.model.DeckFormat
+import com.mmg.magicfolder.core.domain.model.PreferredCurrency
 import com.mmg.magicfolder.core.domain.model.ReviewGroupBy
 import com.mmg.magicfolder.core.ui.theme.MagicTheme
 import com.mmg.magicfolder.core.ui.theme.magicColors
@@ -51,6 +52,7 @@ fun DeckBuilderScreen(
     val state                by viewModel.state.collectAsStateWithLifecycle()
     val commanderResults     by viewModel.commanderResults.collectAsStateWithLifecycle()
     val isSearchingCommander by viewModel.isSearchingCommander.collectAsStateWithLifecycle()
+    val preferredCurrency    by viewModel.preferredCurrency.collectAsStateWithLifecycle()
     val mc = MaterialTheme.magicColors
     val ty = MaterialTheme.magicTypography
 
@@ -117,20 +119,22 @@ fun DeckBuilderScreen(
                 },
                 modifier             = Modifier.padding(padding),
             )
-            BuilderStep.BUILDING -> BuildingStep(
-                state                 = state,
-                onAddToMainboard      = viewModel::addToMainboard,
-                onAddToSideboard      = viewModel::addToSideboard,
-                onRemoveFromMainboard = viewModel::removeFromMainboard,
-                onRemoveNonBasicLand  = viewModel::removeNonBasicLand,
-                onSetTab              = viewModel::setActiveTab,
-                onToggleColorFilter   = viewModel::toggleColorFilter,
-                onSetMaxPriceFilter   = viewModel::setMaxPriceFilter,
-                onClearFilters        = viewModel::clearFilters,
-                onGoToReview          = viewModel::goToReview,
-                getFilteredCards      = viewModel::getFilteredCards,
-                modifier              = Modifier.padding(padding),
-            )
+            BuilderStep.BUILDING -> {
+                BuildingStep(
+                    state                 = state,
+                    onAddToMainboard      = viewModel::addToMainboard,
+                    onAddToSideboard      = viewModel::addToSideboard,
+                    onRemoveFromMainboard = viewModel::removeFromMainboard,
+                    onRemoveNonBasicLand  = viewModel::removeNonBasicLand,
+                    onSetTab              = viewModel::setActiveTab,
+                    onToggleColorFilter   = viewModel::toggleColorFilter,
+                    onSetMaxPriceFilter   = viewModel::setMaxPriceFilter,
+                    onClearFilters        = viewModel::clearFilters,
+                    onGoToReview          = viewModel::goToReview,
+                    getFilteredCards      = { cards -> viewModel.getFilteredCards(cards, preferredCurrency) },
+                    modifier              = Modifier.padding(padding),
+                )
+            }
             BuilderStep.REVIEW -> ReviewStep(
                 state                    = state,
                 onRemoveFromMainboard    = viewModel::removeFromMainboard,

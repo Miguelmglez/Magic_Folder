@@ -205,13 +205,13 @@ class CollectionViewModel @Inject constructor(
         val filters = state.activeFilters
         if (filters.isNotEmpty()) {
             result = result.filter { item ->
-                val colors = item.card.colorIdentity
+                val identity = item.card.colorIdentity
                 when {
-                    filters.contains(ColorFilter.COLORLESS)  -> colors.isEmpty()
+                    filters.contains(ColorFilter.COLORLESS) -> identity.isEmpty()
                     else -> {
-                        // AND logic: card must contain ALL selected WUBRG colors
+                        // OR logic: card is shown if it matches AT LEAST ONE selected color
                         val selectedColors = filters.map { it.name }.toSet()
-                        selectedColors.all { colors.contains(it) }
+                        selectedColors.any { identity.contains(it) }
                     }
                 }
             }

@@ -23,8 +23,43 @@ class LocaleLanguageProvider @Inject constructor() {
         else -> getEnglishCountryCode()
     }
 
-    private fun getEnglishCountryCode(): String = when ((Locale.getDefault().country)) {
-        "GB" -> "gb"
-        else -> "us"
+    private fun getEnglishCountryCode(): String {
+        val locale = Locale.getDefault()
+        val country = locale.country
+        val finalCountry = if (country.isNullOrBlank()) {
+            locale.toLanguageTag().split("-")
+                .find { it.length == 2 && it.all { c -> c.isLetter() } }
+        } else {
+            country
+        }
+        
+        return when (finalCountry?.uppercase()) {
+            "GB" -> "gb"
+            else -> "us"
+        }
+    }
+
+    companion object {
+        private val EUROPEAN_COUNTRIES = setOf(
+            // Eurozona
+            "AT","BE","CY","EE","FI","FR","DE","GR","IE",
+            "IT","LV","LT","LU","MT","NL","PT","SK","SI",
+            "ES","HR",
+            // Europa no eurozona pero con formato europeo
+            "GB","CH","NO","SE","DK","PL","CZ","HU","RO",
+            "BG","RS","BA","AL","MK","ME","XK",
+            // Otros con formato europeo
+            "RU","UA","TR", ""
+        )
+
+        /**
+         * Determina si el dispositivo usa formato europeo (utilizado para el valor inicial por defecto).
+         * Utiliza un fallback al language tag si el campo country está vacío.
+         */
+        fun isEuropeanLocale(): Boolean {
+            val locale = Locale.getDefault()
+            val country = locale.country
+            return country.uppercase() in EUROPEAN_COUNTRIES
+        }
     }
 }

@@ -4,24 +4,11 @@ import com.mmg.magicfolder.core.domain.model.PreferredCurrency
 
 object PriceFormatter {
 
-    // Locales europeos: países donde se usa EUR o donde el formato decimal europeo es estándar
-    private val EUROPEAN_COUNTRIES = setOf(
-        // Eurozona
-        "AT","BE","CY","EE","FI","FR","DE","GR","IE",
-        "IT","LV","LT","LU","MT","NL","PT","SK","SI",
-        "ES","HR",
-        // Europa no eurozona pero con formato europeo
-        "GB","CH","NO","SE","DK","PL","CZ","HU","RO",
-        "BG","RS","BA","AL","MK","ME","XK",
-        // Otros con formato europeo
-        "RU","UA","TR"
-    )
-
-    // Determina si el dispositivo usa formato europeo (utilizado para el valor inicial por defecto)
-    fun isEuropeanLocale(): Boolean {
-        val locale = java.util.Locale.getDefault()
-        return locale.country.uppercase() in EUROPEAN_COUNTRIES
-    }
+    /**
+     * Determina si el dispositivo usa formato europeo (utilizado para el valor inicial por defecto).
+     * Delega la lógica a LocaleLanguageProvider.
+     */
+    fun isEuropeanLocale(): Boolean = LocaleLanguageProvider.isEuropeanLocale()
 
     /**
      * Formatea un precio dado su valor y divisa preferida.
