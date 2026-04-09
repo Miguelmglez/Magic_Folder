@@ -709,6 +709,14 @@
     <string name="set_type_other">Other</string>
     <string name="advsearch_set_selected_count">%1$d sets selected</string>
     <string name="advsearch_set_done">Done (%1$d sets)</string>
+    <string name="advsearch_apply_button">Apply filters</string>
+    <string name="advsearch_section_collection_status">Collection status</string>
+    <string name="advsearch_filter_wishlist">In wishlist</string>
+    <string name="advsearch_filter_for_trade">Marked for trade</string>
+    <string name="advsearch_section_tags">Tags</string>
+    <string name="advsearch_tags_hint">Any card or user tag</string>
+    <string name="collection_active_filters">%1$d active filter(s)</string>
+    <string name="collection_clear_filters">Clear filters</string>
 
     <!-- ══════════════════════════════════════════
          PRICE FORMATTING
@@ -802,5 +810,14 @@
     <string name="draft_cards_all">All Cards</string>
     <string name="draft_guide_videos">Videos</string>
     <string name="draft_card_artist">Artist: %1$s</string>
+
+    <!-- Deck import / export -->
+    <string name="deck_import_title">Import Deck</string>
+    <string name="deck_import_hint">Paste a deck list in Moxfield or MTG Arena format. Each line should follow the pattern: 4 Lightning Bolt or 4 Lightning Bolt (M11) 163</string>
+    <string name="deck_import_placeholder">Deck\n4 Lightning Bolt\n2 Mountain\n\nSideboard\n2 Grafdigger\'s Cage</string>
+    <string name="deck_import_loading">Resolving cards…</string>
+    <string name="deck_import_button">Import</string>
+    <string name="deck_import_button_setup">Import deck list</string>
+    <string name="deck_export_share_label">Share deck list</string>
 
 </resources>

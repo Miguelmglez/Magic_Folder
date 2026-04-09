@@ -46,6 +46,7 @@ import com.mmg.magicfolder.core.ui.theme.magicTypography
 fun AdvancedSearchSheet(
     onDismiss: () -> Unit,
     onSearch: (advancedQuery: AdvancedSearchQuery, rawScryfall: String) -> Unit,
+    isCollectionMode: Boolean = false,
     viewModel: AdvancedSearchViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -85,8 +86,8 @@ fun AdvancedSearchSheet(
                 }
             }
 
-            // ── Real-time query preview ─────────────────────────────────────────
-            AnimatedVisibility(visible = uiState.builtQuery.isNotBlank()) {
+            // ── Real-time query preview (Scryfall mode only) ───────────────────
+            AnimatedVisibility(visible = !isCollectionMode && uiState.builtQuery.isNotBlank()) {
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -709,8 +710,57 @@ fun AdvancedSearchSheet(
                     }
                 }
 
+                // ── Collection status (collection mode only) ──
+                if (isCollectionMode) {
+                    item {
+                        SearchSection(title = stringResource(R.string.advsearch_section_collection_status)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                listOf(
+                                    stringResource(R.string.advsearch_filter_wishlist) to (uiState.filterWishlist == true),
+                                    stringResource(R.string.advsearch_filter_for_trade) to (uiState.filterForTrade == true),
+                                ).forEachIndexed { index, (label, isSelected) ->
+                                    FilterChip(
+                                        selected = isSelected,
+                                        onClick = {
+                                            if (index == 0)
+                                                viewModel.setFilterWishlist(if (isSelected) null else true)
+                                            else
+                                                viewModel.setFilterForTrade(if (isSelected) null else true)
+                                        },
+                                        label = { Text(label, style = ty.labelSmall) },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ── Tags (collection mode only) ──
+                if (isCollectionMode) {
+                    item {
+                        SearchSection(title = stringResource(R.string.advsearch_section_tags)) {
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                com.mmg.magicfolder.core.domain.model.CardTag.canonical.forEach { tag ->
+                                    val isSelected = uiState.filterTags.contains(tag.key)
+                                    FilterChip(
+                                        selected = isSelected,
+                                        onClick = { viewModel.toggleFilterTag(tag.key) },
+                                        label = { Text(tag.label, style = ty.labelSmall) },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // ── Sort ──
-                item {
+                if (!isCollectionMode) item {
                     SearchSection(
                         title = stringResource(R.string.advsearch_section_sort),
                         collapsedByDefault = true,
@@ -748,7 +798,7 @@ fun AdvancedSearchSheet(
                 }
             }
 
-            // ── Search button ───────────────────────────────────────────────────
+            // ── Search / Apply button ───────────────────────────────────────────
             Button(
                 onClick = {
                     onSearch(uiState.currentQuery, uiState.builtQuery)
@@ -757,7 +807,8 @@ fun AdvancedSearchSheet(
                     .fillMaxWidth()
                     .padding(16.dp)
                     .height(52.dp),
-                enabled = uiState.builtQuery.isNotBlank(),
+                enabled = if (isCollectionMode) true
+                          else uiState.builtQuery.isNotBlank(),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = mc.primaryAccent,
@@ -765,7 +816,10 @@ fun AdvancedSearchSheet(
                 ),
             ) {
                 Text(
-                    stringResource(R.string.advsearch_search_button),
+                    stringResource(
+                        if (isCollectionMode) R.string.advsearch_apply_button
+                        else R.string.advsearch_search_button
+                    ),
                     style = ty.labelLarge,
                 )
             }
