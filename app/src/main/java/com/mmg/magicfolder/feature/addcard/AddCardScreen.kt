@@ -372,9 +372,9 @@ private fun SearchResultItem(card: Card, onClick: () -> Unit) {
                 if (price != null && price > 0) {
                     Text(
                         text = if (card.priceEur != null)
-                            "€${"%.2f".format(price)}"
+                            "${"%.2f".format(price)}${R.string.price_symbol_eur}"
                         else
-                            "${"$"}${"%.2f".format(price)}",
+                            "${R.string.price_symbol_usd}${"%.2f".format(price)}",
                         style = ty.bodySmall,
                         color = mc.goldMtg,
                     )
