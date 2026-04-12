@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "344565389829",
+    "project_id": "manahub-ec75d",
+    "storage_bucket": "manahub-ec75d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:344565389829:android:ee99ff4ab191fe023eda6c",
+        "android_client_info": {
+          "package_name": "com.mmg.manahub"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJ3pNjORr3jSgawuoQpgXMNlw42YW_im4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
